@@ -133,6 +133,158 @@
             `;
         }
 
+        // 🔍 ADVANCED SEARCH VIEWS
+        async function loadPickupSearch() {
+            setActiveNavItem("pickup-search");
+            const grid = document.getElementById("data-grid");
+            grid.innerHTML = "";
+            document.getElementById("view-title").innerText = "Search Pickup Requests";
+            
+            // Fetch clients for dropdown
+            const clients = await getData("/clients") || [];
+
+            grid.innerHTML = `
+                <div style="grid-column: 1/-1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="font-size: 1.1rem; color: var(--text-main);"></h3>
+                    <a href="#" onclick="showNewPickupModal()" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">+ New Pickup Request</a>
+                </div>
+
+                <div class="card" style="grid-column: 1/-1; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 20px; color: #1e293b;">
+                    <!-- Row 1: Basic Filters -->
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1.5fr auto; gap: 15px; margin-bottom: 20px;">
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Search</label>
+                            <input id="p-search-query" type="text" placeholder="Pickup ID / Client" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Pickup Status</label>
+                            <select id="p-search-status" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="Ignore">Ignore</option>
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                                <option value="converted">Converted</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Order created</label>
+                            <select id="p-search-order-created" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="Ignore">Ignore</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button onclick="executePickupSearch()" style="background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 1.1rem;">🔄</button>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Assignment & Route -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Assigned To Staff</label>
+                            <select id="p-search-assigned" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="Ignore">Ignore</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Pickup done by</label>
+                            <select id="p-search-done-by" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="Ignore">Ignore</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Route</label>
+                            <select id="p-search-route" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="Ignore">Ignore</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Delivery Plan</label>
+                            <select id="p-search-plan" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="Ignore">Ignore</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Date Filters -->
+                    <div style="border: 1px solid #cbd5e1; padding: 15px; border-radius: 4px; margin-bottom: 20px; background: rgba(255,255,255,0.5);">
+                        <div style="display: flex; gap: 20px; margin-bottom: 10px; font-size: 0.85rem;">
+                            <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="p-date-field" value="request_date" checked> Request Date</label>
+                            <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="p-date-field" value="scheduled_date"> Scheduled Date</label>
+                            <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="p-date-field" value="picked_up_date"> Picked up on Date</label>
+                        </div>
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <select id="p-search-range-type" style="padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; width: 150px;">
+                                <option>Month To Date</option>
+                            </select>
+                            <input type="date" id="p-search-start" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                            <input type="date" id="p-search-end" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Client Selection -->
+                    <div>
+                        <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Client</label>
+                        <select id="p-search-client" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; background: white;">
+                            <option value="">Select a client</option>
+                            ${clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                         <a href="#" style="color: var(--primary); text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 5px;">
+                            <span style="font-size: 1rem;">📧</span> Email
+                         </a>
+                    </div>
+                </div>
+
+                <div id="pickup-results-container" style="grid-column: 1/-1; margin-top: 20px;">
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted); border: 1px dashed #cbd5e1; border-radius: 8px;">
+                        No PickupRequest records found for current search criterion.<br>
+                        Add a new PickupRequest or broaden your search criterion
+                    </div>
+                </div>
+            `;
+            
+            // Set default dates
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            const lastDay = today.toISOString().split('T')[0];
+            document.getElementById("p-search-start").value = firstDay;
+            document.getElementById("p-search-end").value = lastDay;
+        }
+
+        async function executePickupSearch() {
+            const query = document.getElementById("p-search-query").value;
+            const status = document.getElementById("p-search-status").value;
+            const order_created = document.getElementById("p-search-order-created").value;
+            const client_id = document.getElementById("p-search-client").value;
+            const date_field = document.querySelector('input[name="p-date-field"]:checked').value;
+            const start = document.getElementById("p-search-start").value;
+            const end = document.getElementById("p-search-end").value;
+
+            let url = `/orders/pickup?`;
+            if (query) url += `search=${query}&`;
+            if (status !== "Ignore") url += `status=${status}&`;
+            if (order_created !== "Ignore") url += `order_created=${order_created}&`;
+            if (client_id) url += `client_id=${client_id}&`;
+            url += `date_field=${date_field}&`;
+            if (start) url += `start_date=${start}&`;
+            if (end) url += `end_date=${end}&`;
+
+            const resultsContainer = document.getElementById("pickup-results-container");
+            resultsContainer.innerHTML = `<div style="text-align: center; padding: 20px;"><div class="loading-spinner"></div></div>`;
+            
+            const data = await getData(url);
+            if (!data || data.length === 0) {
+                resultsContainer.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted); border: 1px dashed #cbd5e1; border-radius: 8px;">
+                    No PickupRequest records found for current search criterion.
+                </div>`;
+            } else {
+                renderPickups(data, "Search Results", resultsContainer);
+            }
+        }
+
         // 📦 PICKUPS RENDER
         async function loadPickups() {
             setActiveNavItem("pickup-all");
@@ -146,9 +298,9 @@
             renderPickups(data, `${status.charAt(0).toUpperCase() + status.slice(1)} Pickups`);
         }
 
-        function renderPickups(data, title) {
-            const grid = document.getElementById("data-grid");
-            document.getElementById("view-title").innerText = title;
+        function renderPickups(data, title, targetEl = null) {
+            const grid = targetEl || document.getElementById("data-grid");
+            if (!targetEl) document.getElementById("view-title").innerText = title;
             grid.innerHTML = "";
 
             data.forEach(p => {
@@ -163,37 +315,63 @@
                 card.innerHTML = `
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                            <span style="font-weight: 700;">Client ID: ${p.client_id}</span>
-                            <span class="status-badge ${statusBadge}">${p.status}</span>
+                            <span style="font-weight: 700; color: var(--primary);">#PK-${p.id}</span>
+                            <span class="status-badge ${statusBadge}">${p.status.toUpperCase()}</span>
                         </div>
-                        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">
+                        <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 5px;">
+                            ${p.client ? p.client.name : 'Client ID: ' + p.client_id}
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
                             "${p.note || 'No special instructions'}"
                         </div>
+                        
+                        ${p.assigned_to ? `
+                            <div style="display: flex; gap: 10px; font-size: 0.8rem; margin-bottom: 5px;">
+                                <span style="color: var(--text-muted);">👤 Assigned:</span>
+                                <span style="font-weight: 600;">${p.assigned_to}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${p.route ? `
+                            <div style="display: flex; gap: 10px; font-size: 0.8rem; margin-bottom: 10px;">
+                                <span style="color: var(--text-muted);">📍 Route:</span>
+                                <span style="font-weight: 600;">${p.route}</span>
+                            </div>
+                        ` : ''}
                     </div>
-                    <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 10px;">
-                        <span style="font-size: 0.7rem; color: var(--text-muted)">Requested: ${new Date(p.created_at).toLocaleString()}</span>
+                    
+                    <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.7rem; color: var(--text-muted)">${new Date(p.created_at).toLocaleDateString()}</span>
+                        <div style="display: flex; gap: 5px;">
+                            ${p.status === "pending" ? `<button class="btn-primary" style="padding: 4px 8px; font-size: 0.7rem;" onclick="completePickup(${p.id})">📍 Arrived</button>` : ''}
+                            ${p.status === "completed" ? `<button class="btn-primary" style="padding: 4px 8px; font-size: 0.7rem; background: var(--accent);" onclick="convertPickup(${p.id})">✨ Convert</button>` : ''}
+                        </div>
                     </div>
                 `;
 
-                if (p.status === "pending") {
-                    const btn = document.createElement("button");
-                    btn.className = "btn-primary";
-                    btn.style.marginTop = "15px";
-                    btn.innerText = "📍 Mark Arrived";
-                    btn.onclick = () => completePickup(p.id);
-                    card.appendChild(btn);
-                } else if (p.status === "completed") {
-                    const btn = document.createElement("button");
-                    btn.className = "btn-primary";
-                    btn.style.marginTop = "15px";
-                    btn.style.background = "var(--accent)";
-                    btn.innerText = "✨ Convert to Order";
-                    btn.onclick = () => convertPickup(p.id);
-                    card.appendChild(btn);
-                }
-
                 grid.appendChild(card);
             });
+        }
+
+        // ➕ ACTIONS
+        async function showNewPickupModal() {
+            const cid = prompt("Enter Client ID:");
+            if (!cid) return;
+            const note = prompt("Enter Note (Optional):");
+            const assigned = prompt("Assign to Staff (Optional):");
+            
+            const res = await postData("/orders/pickup", { 
+                client_id: parseInt(cid), 
+                note: note,
+                assigned_to: assigned
+            });
+            
+            if (res.id) {
+                alert("Pickup Request Created!");
+                executePickupSearch();
+            } else {
+                alert("Error: " + (res.error || "Unknown error"));
+            }
         }
 
         // 🏭 ORDERS RENDER
