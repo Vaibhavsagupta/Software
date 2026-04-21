@@ -13,23 +13,19 @@
     <div class="app-container">
         <!-- TOP NAVBAR -->
         <div class="navbar">
-            <h2 onclick="window.location.href='index.html'">Lab Command</h2>
+            <h2 onclick="go('index.html')">Lab Command</h2>
             <div class="navbar-content">
-                <div class="sidebar-nav">
-                    <div class="nav-item" onclick="window.location.href='index.html'"><span>🏠 Dashboard</span></div>
-                    <div class="nav-item" onclick="window.location.href='clients.html'"><span>👥 Clients</span></div>
-                    <div class="nav-item active" onclick="window.location.href='orders.html'"><span>📦 Orders</span></div>
-                    <div class="nav-item" onclick="window.location.href='pickups.html'"><span>🚚 Pickups</span></div>
-                    <div class="nav-item" onclick="window.location.href='shipments.html'"><span>🚚 Shipments</span></div>
-                    <div class="nav-item" onclick="window.location.href='accounts.html'"><span>💰 Accounts</span></div>
-                    <div class="nav-item" onclick="go('expenses.html')"><span>💸 Expenses</span></div>
-                </div>
+                <div class="nav-item" onclick="go('index.html')">🏠 Home</div>
+                <div class="nav-item" onclick="go('clients.html')">👥 Clients</div>
+                <div class="nav-item active" onclick="go('orders.html')">📦 Orders</div>
+                <div class="nav-item" onclick="go('pickups.html')">🚚 Pickups</div>
+                <div class="nav-item" onclick="go('shipments.html')">🚚 Shipments</div>
+                <div class="nav-item" onclick="go('accounts.html')">💰 Accounts</div>
+                <div class="nav-item" onclick="go('expenses.html')">💸 Expenses</div>
             </div>
             <div class="navbar-actions">
-                <div style="font-size: 0.85rem; color: var(--text-muted);">
-                    Secured: <span id="user-role" style="color: var(--accent); font-weight: 600;">...</span>
-                </div>
-                <button class="btn-primary" style="background: var(--danger); width: auto; padding: 8px 16px; font-size: 0.8rem;" onclick="logout()">🚪 Exit</button>
+                <div style="font-size: 0.9rem; color: #64748b;">Secured: <span style="color: #10b981; font-weight: 600;">ADMIN</span></div>
+                <button class="exit-btn" onclick="logout()">🚪 Exit</button>
             </div>
         </div>
 
@@ -297,8 +293,7 @@
             const stat = document.getElementById("status_select").value;
             if(!oid) return alert("Select an Order");
             
-            const response = await fetch(`http://127.0.0.1:8000/orders/${oid}/status?status=${stat}`, { method: "PUT" });
-            const result = await response.json();
+            const result = await putData(`/orders/${oid}/status?status=${stat}`);
             if(result.error) alert(result.error);
             loadOrders();
         }

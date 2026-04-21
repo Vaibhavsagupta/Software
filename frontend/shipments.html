@@ -171,21 +171,24 @@
 </head>
 <body>
 
-    <header class="main-header">
-        <div class="header-brand"><h2 onclick="location.href='index.html'">Lab Dynamics</h2></div>
-        <nav class="nav-center">
-            <div class="nav-icon" title="Dashboard" onclick="location.href='index.html'">🏠</div>
-            <div class="nav-icon" title="Clinicians" onclick="location.href='clients.html'">👥</div>
-            <div class="nav-icon" title="Orders" onclick="location.href='orders.html'">📋</div>
-            <div class="nav-icon active" title="Shipments" onclick="location.href='shipments.html'">✈️</div>
-            <div class="nav-icon" title="Pickups" onclick="location.href='pickups.html'">🚚</div>
-            <div class="nav-icon" title="Accounts" onclick="location.href='accounts.html'">💰</div>
-            <div class="nav-icon" title="Expenses" onclick="location.href='expenses.html'">💸</div>
-        </nav>
-        <div class="header-actions">
-            <button class="btn-primary" style="background:#ef4444; border:none; width:auto; padding:8px 20px;" onclick="logout()">Terminate Session</button>
+    <div class="app-container">
+        <!-- TOP NAVBAR -->
+        <div class="navbar">
+            <h2 onclick="go('index.html')">Lab Command</h2>
+            <div class="navbar-content">
+                <div class="nav-item" onclick="go('index.html')">🏠 Home</div>
+                <div class="nav-item" onclick="go('clients.html')">👥 Clients</div>
+                <div class="nav-item" onclick="go('orders.html')">📦 Orders</div>
+                <div class="nav-item" onclick="go('pickups.html')">🚚 Pickups</div>
+                <div class="nav-item active" onclick="go('shipments.html')">🚚 Shipments</div>
+                <div class="nav-item" onclick="go('accounts.html')">💰 Accounts</div>
+                <div class="nav-item" onclick="go('expenses.html')">💸 Expenses</div>
+            </div>
+            <div class="navbar-actions">
+                <div style="font-size: 0.9rem; color: #64748b;">Secured: <span style="color: #10b981; font-weight: 600;">ADMIN</span></div>
+                <button class="exit-btn" onclick="logout()">🚪 Exit</button>
+            </div>
         </div>
-    </header>
 
     <div class="app-layout">
         <aside class="feature-panel">
