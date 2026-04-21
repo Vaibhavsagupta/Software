@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import String
 from sqlalchemy.orm import Session
-from models import Order, Pickup, Shipment
+from models import Order, Pickup, Shipment, Invoice
 from schemas import OrderCreate, PickupCreate
 from deps import get_db
 from datetime import datetime, timedelta
