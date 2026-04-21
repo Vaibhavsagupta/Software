@@ -47,8 +47,39 @@ def create_order(data: OrderCreate, db: Session = Depends(get_db)):
 
 # 📄 GET ALL ORDERS
 @router.get("/", dependencies=[Depends(staff_only)])
-def get_orders(db: Session = Depends(get_db)):
-    return db.query(Order).all()
+def get_orders(
+    status: Optional[str] = None,
+    client_id: Optional[int] = None,
+    search: Optional[str] = None,
+    invoice_status: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Order)
+    
+    if invoice_status and invoice_status != "Ignore":
+        query = query.join(Invoice).filter(Invoice.status == invoice_status)
+
+    if status and status != "Ignore":
+        query = query.filter(Order.status == status)
+        
+    if client_id:
+        query = query.filter(Order.client_id == client_id)
+        
+    if search:
+        query = query.filter(
+            (Order.id.cast(String).contains(search)) |
+            (Order.patient_name.contains(search)) |
+            (Order.model_number.contains(search))
+        )
+
+    if start_date:
+        query = query.filter(Order.created_at >= start_date)
+    if end_date:
+        query = query.filter(Order.created_at <= end_date)
+        
+    return query.all()
 
 
 # 🔄 SMART STATUS UPDATE (WORKFLOW)

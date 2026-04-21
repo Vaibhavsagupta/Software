@@ -33,29 +33,31 @@
             <!-- SIDE PANEL -->
             <div class="side-panel">
                 <div class="sidebar-nav">
-                    <h4 style="margin-bottom: 10px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">🏭 Production Queue</h4>
-                    <div class="nav-item" id="nav-order-all" onclick="loadOrders()"><span>🛠️ Master Queue</span></div>
-                    <div class="nav-item" id="nav-order-New" onclick="filterOrder('New')"><span>🆕 New Cases</span></div>
-                    <div class="nav-item" id="nav-order-Production" onclick="filterOrder('In Production')"><span>⚡ In Production</span></div>
-                    <div class="nav-item" id="nav-order-TryIn" onclick="filterOrder('Out for TryIn')"><span>🔬 Out for TryIn</span></div>
-                    <div class="nav-item" id="nav-order-Complete" onclick="filterOrder('Complete')"><span>📦 Ready to Ship</span></div>
-                    <div class="nav-item" id="nav-order-Overdue" onclick="filterOrder('Overdue')"><span>🚨 Overdue Cases</span></div>
+                    <h4 style="margin-bottom: 10px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Pickup Requests</h4>
+                    <div class="nav-item" id="nav-pickup-search" onclick="loadPickupSearch()"><span>Search</span></div>
+                    <div class="nav-item" id="nav-pickup-all" onclick="loadPickups()"><span>Do Pickups</span></div>
+                    <div class="nav-item" id="nav-pickup-converted" onclick="loadConvertedPickups()"><span>Create Orders</span></div>
 
-                    <h4 style="margin: 20px 0 10px 0; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">📈 Monitoring</h4>
-                    <div class="nav-item" id="nav-calendar" onclick="loadCalendar()"><span>📅 Calendar</span></div>
-                    <div class="nav-item" id="nav-summary" onclick="loadSummary()"><span>📊 Status Summary</span></div>
+                    <h4 style="margin: 20px 0 10px 0; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Orders</h4>
+                    <div class="nav-item" id="nav-order-Search" onclick="loadOrderSearch()"><span>Search</span></div>
+                    <div class="nav-item" id="nav-order-InProduction" onclick="filterOrder('In Production')"><span>In Production</span><span style="width:12px;height:12px;background:#1e3a8a;border-radius:2px;margin-left:auto;"></span></div>
+                    <div class="nav-item" id="nav-order-Complete" onclick="filterOrder('Complete')"><span>Complete</span><span style="width:12px;height:12px;background:#84cc16;border-radius:2px;margin-left:auto;"></span></div>
+                    <div class="nav-item" id="nav-order-OnHold" onclick="filterOrder('On Hold')"><span>On Hold</span><span style="width:12px;height:12px;background:#4c0519;border-radius:2px;margin-left:auto;"></span></div>
+                    <div class="nav-item" id="nav-order-Cancelled" onclick="filterOrder('Cancelled')"><span>Cancelled</span><span style="width:12px;height:12px;background:#ef4444;border-radius:2px;margin-left:auto;"></span></div>
+                    <div class="nav-item" id="nav-order-OutforTryIn" onclick="filterOrder('Out for TryIn')"><span>Out for try in</span><span style="width:12px;height:12px;background:#ed4091;border-radius:2px;margin-left:auto;"></span></div>
+                    <div class="nav-item" id="nav-order-Delivered" onclick="filterOrder('Delivered')"><span>Delivered</span><span style="width:12px;height:12px;background:#064e3b;border-radius:2px;margin-left:auto;"></span></div>
+                    <div class="nav-item" id="nav-order-Overdue" onclick="filterOrder('Overdue')"><span>OverDue</span></div>
+                    <div class="nav-item" id="nav-order-RepeatRepair" onclick="filterOrder('Repeat/Repair')"><span>Repeat/Repair</span></div>
+
+                    <h4 style="margin: 20px 0 10px 0; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Status</h4>
+                    <div class="nav-item" id="nav-calendar" onclick="loadCalendar()"><span>Calendar</span></div>
+                    <div class="nav-item" id="nav-summary" onclick="loadSummary()"><span>Overview</span></div>
                 </div>
 
                 <hr style="opacity: 0.1; margin: 20px 0;">
 
                 <div class="add-client-form">
-                    <h4 style="margin-bottom: 10px; color: var(--text-muted);">Quick Console</h4>
-                    <input id="client_id_input" type="number" placeholder="Client ID">
-                    <input id="note_input" type="text" placeholder="Notes">
-                    <button class="btn-primary" style="margin-bottom: 15px;" onclick="createPickup()">Request Pickup</button>
-                    
-                    <hr style="opacity: 0.1; margin-bottom: 15px;">
-                    
+                    <h4 style="margin-bottom: 10px; color: var(--text-muted);">Update Console</h4>
                     <input id="order_id_input" type="number" placeholder="Order ID">
                     <select id="status_select" style="width:100%; padding:10px; border-radius:10px; margin-bottom:10px; border:1px solid var(--border);">
                         <option value="In Production">In Production</option>
@@ -63,6 +65,8 @@
                         <option value="Complete">Complete (Final)</option>
                         <option value="Delivered">Mark Delivered</option>
                         <option value="On Hold">Put On Hold</option>
+                        <option value="Cancelled">Cancelled</option>
+                        <option value="Repeat/Repair">Repeat/Repair</option>
                     </select>
                     <button class="btn-primary" style="background: var(--accent);" onclick="updateStatus()">Update Status</button>
                 </div>
@@ -387,6 +391,177 @@
             }
         }
 
+        // 🔍 ADVANCED ORDER VIEWS (Search & Status Filters)
+        async function loadOrderSearch() {
+            renderOrderSearchUI("Ignore", "Search");
+        }
+
+        async function filterOrder(status) {
+            renderOrderSearchUI(status, status);
+        }
+
+        async function renderOrderSearchUI(defaultStatus, title) {
+            setActiveNavItem("order-" + (defaultStatus.replace(" ", "")));
+            const grid = document.getElementById("data-grid");
+            document.getElementById("view-title").innerText = title;
+            
+            const clients = await getData("/clients") || [];
+
+            grid.innerHTML = `
+                <div style="grid-column: 1/-1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="font-size: 1.1rem; color: var(--text-main);"></h3>
+                    <a href="#" onclick="showNewOrderModal()" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">+ New Order</a>
+                </div>
+
+                <div class="card" style="grid-column: 1/-1; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 20px; color: #1e293b;">
+                    <!-- Row 1: Search Type & Main Filters -->
+                    <div style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 1fr auto; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <div style="display: flex; gap: 15px; font-size: 0.85rem; margin-bottom: 5px;">
+                                <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="o-search-type" value="search" checked> Search</label>
+                                <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="o-search-type" value="scan"> Scan</label>
+                            </div>
+                            <input id="o-search-query" type="text" placeholder="Order ID / Model # / Patient Name" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Order Status</label>
+                            <select id="o-search-status" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="Ignore" ${defaultStatus === "Ignore" ? 'selected' : ''}>Ignore</option>
+                                <option value="New" ${defaultStatus === "New" ? 'selected' : ''}>New</option>
+                                <option value="In Production" ${defaultStatus === "In Production" ? 'selected' : ''}>In Production</option>
+                                <option value="Complete" ${defaultStatus === "Complete" ? 'selected' : ''}>Complete</option>
+                                <option value="On Hold" ${defaultStatus === "On Hold" ? 'selected' : ''}>On Hold</option>
+                                <option value="Cancelled" ${defaultStatus === "Cancelled" ? 'selected' : ''}>Cancelled</option>
+                                <option value="Out for TryIn" ${defaultStatus === "Out for TryIn" ? 'selected' : ''}>Out for try in</option>
+                                <option value="Delivered" ${defaultStatus === "Delivered" ? 'selected' : ''}>Delivered</option>
+                                <option value="Overdue" ${defaultStatus === "Overdue" ? 'selected' : ''}>Overdue</option>
+                                <option value="Repeat/Repair" ${defaultStatus === "Repeat/Repair" ? 'selected' : ''}>Repeat/Repair</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Shipment Note</label>
+                            <select id="o-search-shipment" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="Ignore">Ignore</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Invoice Status</label>
+                            <select id="o-search-invoice" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="Ignore">Ignore</option>
+                                <option value="awaiting">Awaiting</option>
+                                <option value="paid">Paid</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button onclick="executeOrderSearch()" style="background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 1.1rem;">🔄</button>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Date Filters -->
+                    <div style="border: 1px solid #cbd5e1; padding: 15px; border-radius: 4px; margin-bottom: 15px; background: rgba(255,255,255,0.5);">
+                        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                             <div>
+                                <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Compare Date</label>
+                                <select id="o-search-compare-field" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                    <option value="created_at">Order Date</option>
+                                    <option value="due_date">Due Date</option>
+                                </select>
+                             </div>
+                             <div>
+                                <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px; opacity:0;">Range</label>
+                                <div style="display: flex; gap: 15px; align-items: center;">
+                                    <select id="o-search-range-type" style="padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; width: 150px;">
+                                        <option>Month To Date</option>
+                                    </select>
+                                    <input type="date" id="o-search-start" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                    <input type="date" id="o-search-end" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Client -->
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Client</label>
+                            <select id="o-search-client" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; background: white;">
+                                <option value="">Select a client</option>
+                                ${clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div style="padding-top: 20px;">
+                             <a href="#" style="color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: 500;">Advanced Search</a>
+                        </div>
+                    </div>
+
+                    <!-- Action Toolbar -->
+                    <div style="margin-top: 20px; display: flex; gap: 20px; align-items: center; border-top: 1px solid #cbd5e1; padding-top: 15px; font-size: 0.85rem; color: var(--primary);">
+                        <div style="display: flex; align-items: center; gap: 5px; cursor: pointer;">Mark as ▾</div>
+                        <div style="display: flex; align-items: center; gap: 5px; cursor: pointer;">Move To ▾</div>
+                        <div style="display: flex; align-items: center; gap: 5px; cursor: pointer;">Assign To ▾</div>
+                        <div style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #64748b;">🖨️ Print</div>
+                        <div style="display: flex; align-items: center; gap: 5px; cursor: pointer;">📧 Email</div>
+                        <div style="display: flex; align-items: center; gap: 5px; cursor: pointer;">Fields</div>
+                    </div>
+                </div>
+
+                <div id="order-results-container" style="grid-column: 1/-1; margin-top: 20px;">
+                </div>
+            `;
+
+            // Set default dates
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            const lastDay = today.toISOString().split('T')[0];
+            document.getElementById("o-search-start").value = firstDay;
+            document.getElementById("o-search-end").value = lastDay;
+
+            // Auto-load if status is provided
+            if (defaultStatus !== "Ignore") {
+                executeOrderSearch();
+            } else {
+                document.getElementById("order-results-container").innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted); border: 1px dashed #cbd5e1; border-radius: 8px;">
+                        No Order records found for current search criterion.<br>
+                        Click New Order to add a new Order or broaden your search criterion
+                    </div>
+                `;
+            }
+        }
+
+        async function executeOrderSearch() {
+            const query = document.getElementById("o-search-query").value;
+            const status = document.getElementById("o-search-status").value;
+            const invoice_status = document.getElementById("o-search-invoice").value;
+            const client_id = document.getElementById("o-search-client").value;
+            const start = document.getElementById("o-search-start").value;
+            const end = document.getElementById("o-search-end").value;
+
+            let url = `/orders/?`;
+            if (query) url += `search=${query}&`;
+            if (status !== "Ignore") url += `status=${status}&`;
+            if (invoice_status !== "Ignore") url += `invoice_status=${invoice_status}&`;
+            if (client_id) url += `client_id=${client_id}&`;
+            if (start) url += `start_date=${start}&`;
+            if (end) url += `end_date=${end}&`;
+
+            const resultsContainer = document.getElementById("order-results-container");
+            resultsContainer.innerHTML = `<div style="text-align: center; padding: 20px;"><div class="loading-spinner"></div></div>`;
+            
+            const data = await getData(url);
+            if (!data || data.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted); border: 1px dashed #cbd5e1; border-radius: 8px;">
+                        No Order records found for current search criterion.<br>
+                        Click New Order to add a new Order or broaden your search criterion
+                    </div>
+                `;
+            } else {
+                renderOrders(data, "Search Results", resultsContainer);
+            }
+        }
+
         // 🏭 ORDERS RENDER
         async function loadOrders() {
             setActiveNavItem("order-all");
@@ -394,16 +569,15 @@
             renderOrders(data, "Production Master Queue");
         }
 
-        async function filterOrder(status) {
-            setActiveNavItem("order-" + (status.replace(" ", "")));
-            const data = await getData(`/orders/status/${status}`);
-            renderOrders(data, `${status} Cases`);
-        }
-
-        function renderOrders(data, title) {
-            const grid = document.getElementById("data-grid");
-            document.getElementById("view-title").innerText = title;
+        function renderOrders(data, title, targetEl = null) {
+            const grid = targetEl || document.getElementById("data-grid");
+            if (!targetEl) document.getElementById("view-title").innerText = title;
             grid.innerHTML = "";
+
+            if (!data || data.length === 0 && !targetEl) {
+                grid.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1/-1;">No records found.</div>`;
+                return;
+            }
 
             data.forEach(o => {
                 const card = document.createElement("div");
