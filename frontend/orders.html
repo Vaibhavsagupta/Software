@@ -133,18 +133,27 @@
             `;
         }
 
-        // 🔍 ADVANCED PICKUP VIEWS (Search & Do Pickups)
+        // 🔍 ADVANCED PICKUP VIEWS (Search, Do Pickups, Create Orders)
         async function loadPickupSearch() {
-            renderPickupSearchUI("Ignore", "Search Pickup Requests");
+            renderPickupSearchUI("Ignore", "Search Pickup Requests", "Ignore");
         }
 
         async function loadPickups() {
-            // "Do Pickups" in image shows the same search UI but with "Not Picked Up" status
-            renderPickupSearchUI("pending", "Search Pickup Requests");
+            // "Do Pickups" shows "Not Picked Up" status
+            renderPickupSearchUI("pending", "Search Pickup Requests", "Ignore");
         }
 
-        async function renderPickupSearchUI(defaultStatus, title) {
-            setActiveNavItem(defaultStatus === "pending" ? "pickup-all" : "pickup-search");
+        async function loadConvertedPickups() {
+            // "Create Orders" shows "Order Not Generated"
+            renderPickupSearchUI("Ignore", "Search Pickup Requests", "No");
+        }
+
+        async function renderPickupSearchUI(defaultStatus, title, defaultOrderCreated) {
+            setActiveNavItem(
+                defaultStatus === "pending" ? "pickup-all" : 
+                (defaultOrderCreated === "No" ? "pickup-converted" : "pickup-search")
+            );
+            
             const grid = document.getElementById("data-grid");
             grid.innerHTML = "";
             document.getElementById("view-title").innerText = title;
@@ -176,9 +185,9 @@
                         <div>
                             <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Order created</label>
                             <select id="p-search-order-created" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
-                                <option value="Ignore">Ignore</option>
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
+                                <option value="Ignore" ${defaultOrderCreated === "Ignore" ? 'selected' : ''}>Ignore</option>
+                                <option value="Yes" ${defaultOrderCreated === "Yes" ? 'selected' : ''}>Order Generated</option>
+                                <option value="No" ${defaultOrderCreated === "No" ? 'selected' : ''}>Order Not Generated</option>
                             </select>
                         </div>
                         <div style="display: flex; align-items: flex-end;">
@@ -257,8 +266,8 @@
             document.getElementById("p-search-start").value = firstDay;
             document.getElementById("p-search-end").value = lastDay;
 
-            // Trigger initial search for "Do Pickups"
-            if (defaultStatus !== "Ignore") {
+            // Trigger initial search if needed
+            if (defaultStatus !== "Ignore" || defaultOrderCreated !== "Ignore") {
                 executePickupSearch();
             } else {
                 document.getElementById("pickup-results-container").innerHTML = `
