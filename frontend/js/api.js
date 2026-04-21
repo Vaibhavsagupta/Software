@@ -1,6 +1,7 @@
-const BASE_URL = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost" 
+const BASE_URL = (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") 
     ? "http://127.0.0.1:7070" 
-    : window.location.origin;
+    : (window.location.origin.includes("vercel.app") ? "https://software-backend-render.onrender.com" : window.location.origin); 
+    // ^ Replace the Render URL above with your actual Render backend URL if it differs.
 
 // 🔓 Security Removed: No auth headers needed
 function getAuthHeader() {
@@ -10,7 +11,9 @@ function getAuthHeader() {
 async function getData(url) {
     try {
         const res = await fetch(BASE_URL + url);
-        return res.json();
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data;
     } catch (e) {
         console.error("Fetch Error:", e);
         return [];

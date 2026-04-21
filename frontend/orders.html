@@ -161,9 +161,8 @@
             const grid = document.getElementById("data-grid");
             grid.innerHTML = "";
             document.getElementById("view-title").innerText = title;
-            
-            const clients = await getData("/clients") || [];
 
+            // Render Card Immediately
             grid.innerHTML = `
                 <div style="grid-column: 1/-1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="font-size: 1.1rem; color: var(--text-main);"></h3>
@@ -247,8 +246,7 @@
                     <div>
                         <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Client</label>
                         <select id="p-search-client" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; background: white;">
-                            <option value="">Select a client</option>
-                            ${clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                            <option value="">Loading clients...</option>
                         </select>
                     </div>
 
@@ -262,6 +260,35 @@
                 <div id="pickup-results-container" style="grid-column: 1/-1; margin-top: 20px;">
                 </div>
             `;
+            
+            // Set default dates
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            const lastDay = today.toISOString().split('T')[0];
+            document.getElementById("p-search-start").value = firstDay;
+            document.getElementById("p-search-end").value = lastDay;
+
+            // Fetch Clients in Background
+            getData("/clients").then(clients => {
+                const select = document.getElementById("p-search-client");
+                if (select) {
+                    select.innerHTML = '<option value="">Select a client</option>' + 
+                        clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                }
+            });
+
+            // Trigger initial search if needed
+            if (defaultStatus !== "Ignore" || defaultOrderCreated !== "Ignore") {
+                executePickupSearch();
+            } else {
+                document.getElementById("pickup-results-container").innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted); border: 1px dashed #cbd5e1; border-radius: 8px;">
+                        No PickupRequest records found for current search criterion.<br>
+                        Add a new PickupRequest or broaden your search criterion
+                    </div>
+                `;
+            }
+        }
             
             // Set default dates
             const today = new Date();
@@ -405,8 +432,6 @@
             const grid = document.getElementById("data-grid");
             document.getElementById("view-title").innerText = title;
             
-            const clients = await getData("/clients") || [];
-
             grid.innerHTML = `
                 <div style="grid-column: 1/-1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="font-size: 1.1rem; color: var(--text-main);"></h3>
@@ -486,8 +511,7 @@
                         <div style="flex: 1;">
                             <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Client</label>
                             <select id="o-search-client" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; background: white;">
-                                <option value="">Select a client</option>
-                                ${clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                                <option value="">Loading clients...</option>
                             </select>
                         </div>
                         <div style="padding-top: 20px;">
@@ -516,6 +540,15 @@
             const lastDay = today.toISOString().split('T')[0];
             document.getElementById("o-search-start").value = firstDay;
             document.getElementById("o-search-end").value = lastDay;
+
+            // Fetch Clients in Background
+            getData("/clients").then(clients => {
+                const select = document.getElementById("o-search-client");
+                if (select) {
+                    select.innerHTML = '<option value="">Select a client</option>' + 
+                        clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                }
+            });
 
             // Auto-load if status is provided
             if (defaultStatus !== "Ignore") {
