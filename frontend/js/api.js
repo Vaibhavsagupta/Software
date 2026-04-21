@@ -1,6 +1,6 @@
 const BASE_URL = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost" 
     ? "http://127.0.0.1:7070" 
-    : "https://dental-erp-backend.onrender.com";
+    : window.location.origin;
 
 // 🔓 Security Removed: No auth headers needed
 function getAuthHeader() {
