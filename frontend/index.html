@@ -21,45 +21,82 @@
             overflow: hidden;
         }
 
+        /* NAVBAR RE-STYLING to match snippet */
         .navbar {
-            padding: 0 20px;
-            height: 60px;
+            padding: 0 40px;
+            height: 70px;
             background: #fff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .navbar h2 {
-            font-size: 1.2rem;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #6366f1; /* Purple/Indigo */
+            margin-right: 30px;
+        }
+        
+        .navbar h2::before { content: none !important; } /* Remove previous crosshair */
+
+        .navbar-content {
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-
-        .navbar h2::before {
-            content: "\f05b"; /* Crosshair icon */
-            font-family: "Font Awesome 6 Free";
-            font-weight: 900;
-            color: #ef4444;
-            font-size: 1.5rem;
+            gap: 15px;
         }
 
         .nav-item {
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .nav-item:hover {
+            background: #f1f5f9;
         }
 
         .nav-item.active {
-            background: rgba(79, 70, 229, 0.05);
-            color: var(--primary);
-            box-shadow: none;
-            border-bottom: 2px solid var(--primary);
-            border-radius: 0;
+            background: #4f46e5;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+            border: none;
         }
+
+        .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .exit-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .exit-btn:hover { background: #dc2626; }
 
         .content-wrapper {
             display: flex;
-            height: calc(100vh - 60px);
+            height: calc(100vh - 70px);
         }
 
         /* Sidebar Styling */
@@ -239,21 +276,20 @@
     <div class="app-container">
         <!-- TOP NAVBAR -->
         <div class="navbar">
-            <h2 onclick="go('index.html')">Labyx</h2>
+            <h2 onclick="go('index.html')">Lab Command</h2>
             <div class="navbar-content">
-                <div class="sidebar-nav">
-                    <div class="nav-item active" onclick="go('index.html')"><span><i class="fa fa-home"></i> Home</span></div>
-                    <div class="nav-item" onclick="go('clients.html')"><span><i class="fa fa-users"></i> Clients</span></div>
-                    <div class="nav-item" onclick="go('orders.html')"><span><i class="fa fa-box"></i> Orders</span></div>
-                    <div class="nav-item" onclick="go('shipments.html')"><span><i class="fa fa-truck"></i> Shipments</span></div>
-                    <div class="nav-item" onclick="go('accounts.html')"><span><i class="fa fa-wallet"></i> Accounts</span></div>
-                </div>
+                <div class="nav-item active" onclick="go('index.html')">🏠 Home</div>
+                <div class="nav-item" onclick="go('index.html')">📊 Dashboard</div>
+                <div class="nav-item" onclick="go('clients.html')">👥 Clients</div>
+                <div class="nav-item" onclick="go('orders.html')">📦 Orders</div>
+                <div class="nav-item" onclick="go('pickups.html')">🚚 Pickups</div>
+                <div class="nav-item" onclick="go('shipments.html')">🚚 Shipments</div>
+                <div class="nav-item" onclick="go('accounts.html')">💰 Accounts</div>
+                <div class="nav-item" onclick="go('expenses.html')">💸 Expenses</div>
             </div>
             <div class="navbar-actions">
-                <div class="nav-item"><i class="fa fa-building"></i> Office</div>
-                <div class="nav-item"><i class="fa fa-chart-line"></i> Reports</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">SOHAR DENTAL LA...</div>
-                <button class="btn-primary" style="background: var(--danger); width: auto; padding: 5px 10px; font-size: 0.7rem;" onclick="logout()">Logout</button>
+                <div style="font-size: 0.9rem; color: #64748b;">Secured: <span style="color: #10b981; font-weight: 600;">ADMIN</span></div>
+                <button class="exit-btn" onclick="logout()">🚪 Exit</button>
             </div>
         </div>
 
