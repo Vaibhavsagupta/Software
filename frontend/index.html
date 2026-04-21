@@ -387,21 +387,49 @@
             try {
                 const perf = await getData("/dashboard/performance");
                 const alerts = await getData("/dashboard/alerts");
-                const workflow = await getData("/dashboard/workflow"); // Assuming this endpoint might exist or we use defaults
+                const workflow = await getData("/dashboard/workflow");
                 
                 if (perf) {
-                    document.getElementById("stat-new-clients").innerText = perf.new_clients || 1;
-                    document.getElementById("stat-new-orders").innerText = perf.new_orders || 38;
-                    document.getElementById("stat-tryins-out").innerText = perf.tryin_dispatched || 0;
-                    document.getElementById("stat-deliveries").innerText = perf.final_deliveries || 26;
-                    document.getElementById("stat-invoiced").innerText = (perf.invoiced_amount || 712).toLocaleString();
-                    document.getElementById("stat-collection").innerText = (perf.collection || 0).toLocaleString();
-                    document.getElementById("stat-expenses").innerText = (perf.expenses || 0).toLocaleString();
-                    document.getElementById("stat-profit").innerText = (perf.profit_loss || 0).toLocaleString();
+                    document.getElementById("stat-new-clients").innerText = perf.new_clients ?? 0;
+                    document.getElementById("stat-new-orders").innerText = perf.new_orders ?? 0;
+                    document.getElementById("stat-tryins-out").innerText = perf.tryin_dispatched ?? 0;
+                    document.getElementById("stat-tryins-in").innerText = perf.tryin_returned ?? 0;
+                    document.getElementById("stat-deliveries").innerText = perf.final_deliveries ?? 0;
+                    document.getElementById("stat-invoiced").innerText = (perf.invoiced_amount ?? 0).toLocaleString();
+                    document.getElementById("stat-collection").innerText = (perf.collection ?? 0).toLocaleString();
+                    document.getElementById("stat-expenses").innerText = (perf.expenses ?? 0).toLocaleString();
+                    document.getElementById("stat-profit").innerText = (perf.profit_loss ?? 0).toLocaleString();
+                }
+
+                if (workflow) {
+                    document.getElementById("ws-new").innerText = workflow.new ?? 0;
+                    document.getElementById("ws-prod").innerText = workflow.in_production ?? 0;
+                    document.getElementById("ws-comp").innerText = workflow.complete ?? 0;
+                    document.getElementById("ws-hold").innerText = workflow.on_hold ?? 0;
+                    document.getElementById("ws-tryin").innerText = workflow.try_in ?? 0;
+                    
+                    // Update the "Pending Today" cards if they exist
+                    const pendingCard = document.querySelector(".summary-card.pending span");
+                    if (pendingCard) pendingCard.innerText = `${workflow.new + workflow.in_production} Cases Pending Production`;
                 }
 
                 if (alerts) {
-                    // Update bottom intel list dynamically if needed
+                    const alertList = document.querySelector(".intel-list");
+                    if (alertList && (alerts.overdue_orders.count > 0 || alerts.on_hold.count > 0)) {
+                        alertList.innerHTML = "";
+                        if (alerts.overdue_orders.count > 0) {
+                            const li = document.createElement("li");
+                            li.className = "intel-item";
+                            li.innerHTML = `<i class="fa fa-warning" style="color: var(--danger)"></i> <span>${alerts.overdue_orders.count} Orders are Overdue</span>`;
+                            alertList.appendChild(li);
+                        }
+                        if (alerts.on_hold.count > 0) {
+                            const li = document.createElement("li");
+                            li.className = "intel-item";
+                            li.innerHTML = `<i class="fa fa-pause-circle" style="color: var(--warning)"></i> <span>${alerts.on_hold.count} Orders are On Hold</span>`;
+                            alertList.appendChild(li);
+                        }
+                    }
                 }
             } catch (e) {
                 console.error("Dashboard Sync Failed", e);

@@ -32,25 +32,55 @@
         <div class="content-wrapper">
             <!-- SIDE PANEL -->
             <div class="side-panel">
-                <h4 style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Request Logistics</h4>
+                <h4 style="margin-bottom: 20px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Logistics Console</h4>
                 <div class="add-client-form" style="border-top: none; padding-top: 0;">
-                    <select id="client-select" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 12px; border: 1px solid var(--border);">
-                        <option value="">Select Client</option>
+                    <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 8px;">SELECT CLINICIAN</label>
+                    <select id="client-select" style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main); font-family: inherit;">
+                        <option value="">Choose Client...</option>
                     </select>
-                    <button class="btn-primary" onclick="requestPickup()">Create Request</button>
+                    <button class="btn-primary" onclick="requestPickup()">🚀 Request Pickup</button>
+                </div>
+                
+                <div style="margin-top: 40px; padding: 20px; background: rgba(79, 70, 229, 0.05); border-radius: 16px;">
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--primary); margin-bottom: 10px;">PRO TIP</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">Pickups are the first step in the case lifecycle. Once picked, they can be converted to orders.</div>
                 </div>
             </div>
 
             <!-- MAIN CONTENT -->
             <div class="main-content">
                 <div class="header-section">
-                    <h1 class="client-title">Logistics & Pickups</h1>
+                    <div>
+                        <h1 class="client-title">Logistics & Pickups</h1>
+                        <p style="color: var(--text-muted); margin-top: 5px;">Manage incoming case requests and transit status.</p>
+                    </div>
                 </div>
 
-                <div class="card">
-                    <h3 style="margin-bottom: 20px;">Active Pickup Requests</h3>
+                <div id="pickup-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Pending Pickups</div>
+                        <div class="stat-value" id="stat-pending">0</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--accent);">
+                        <div class="stat-label">Picked Up Today</div>
+                        <div class="stat-value" id="stat-picked">0</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--warning);">
+                        <div class="stat-label">Converted to Orders</div>
+                        <div class="stat-value" id="stat-converted">0</div>
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div style="padding: 20px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700;">Active Requests</h3>
+                        <button class="btn-primary" style="width: auto; padding: 8px 15px; font-size: 0.8rem; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border);" onclick="loadData()">🔄 Refresh</button>
+                    </div>
                     <div id="pickup-list">
-                        <p style="text-align: center; color: var(--text-muted)">Loading pickups...</p>
+                        <div style="text-align: center; padding: 60px; color: var(--text-muted)">
+                            <div class="loading-spinner" style="margin-bottom: 15px;"></div>
+                            <p>Connecting to logistics stream...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -60,34 +90,66 @@
     <script>
         async function loadData() {
             // Load Clients for dropdown
-            const clients = await getData("/clients");
+            const clients = await getData("/clients/");
             const select = document.getElementById("client-select");
-            clients.forEach(c => {
-                const opt = document.createElement("option");
-                opt.value = c.id;
-                opt.innerText = c.name;
-                select.appendChild(opt);
-            });
+            if(select) {
+                select.innerHTML = '<option value="">Choose Client...</option>';
+                clients.forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c.id;
+                    opt.innerText = c.name;
+                    select.appendChild(opt);
+                });
+            }
 
             // Load Pickups
-            const pickups = await getData("/pickups");
+            const pickups = await getData("/pickups/");
             const list = document.getElementById("pickup-list");
-            list.innerHTML = pickups.length ? pickups.map(p => {
-                const clientName = clients.find(c => c.id === p.client_id)?.name || "Unknown";
-                return `
-                <div class="card" style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-                    <div>
-                        <div style="font-weight: 600; font-size: 1.1rem;">${clientName}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted)">Requested on: ${new Date(p.created_at).toLocaleString()}</div>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <span class="status-badge ${p.status === 'picked' ? 'badge-green' : 'badge-orange'}">${p.status.toUpperCase()}</span>
-                        ${p.status !== 'picked' ? `<button class="btn-primary" style="padding: 5px 10px; font-size: 0.7rem;" onclick="markPicked(${p.id})">Mark Picked</button>` : ''}
-                        ${p.status === 'picked' ? `<button class="btn-primary" style="padding: 5px 10px; font-size: 0.7rem; background: var(--accent);" onclick="createOrder(${p.id})">Create Order</button>` : ''}
-                    </div>
-                </div>
+            
+            // Stats calculation
+            let pending = 0, picked = 0, converted = 0;
+
+            if (!pickups || pickups.length === 0) {
+                list.innerHTML = `<div style="text-align: center; padding: 60px; color: var(--text-muted)">No active pickup requests. Start by creating one from the sidebar.</div>`;
+            } else {
+                list.innerHTML = `
+                    <table class="erp-table">
+                        <thead>
+                            <tr>
+                                <th>Client Name</th>
+                                <th>Requested At</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pickups.map(p => {
+                                const clientName = clients.find(c => c.id === p.client_id)?.name || "Unknown";
+                                if(p.status === 'pending') pending++;
+                                if(p.status === 'picked') picked++;
+                                
+                                let statusBadge = p.status === 'picked' ? 'badge-green' : 'badge-orange';
+                                
+                                return `
+                                <tr>
+                                    <td style="font-weight: 600;">${clientName}</td>
+                                    <td>${new Date(p.created_at).toLocaleString()}</td>
+                                    <td><span class="status-badge ${statusBadge}">${p.status.toUpperCase()}</span></td>
+                                    <td style="text-align: right;">
+                                        ${p.status === 'pending' ? `<button class="btn-primary" style="padding: 6px 12px; font-size: 0.75rem; width: auto;" onclick="markPicked(${p.id})">Mark Picked</button>` : ''}
+                                        ${p.status === 'picked' ? `<button class="btn-primary" style="padding: 6px 12px; font-size: 0.75rem; width: auto; background: var(--accent);" onclick="createOrder(${p.id})">Create Order</button>` : ''}
+                                    </td>
+                                </tr>
+                                `;
+                            }).join("")}
+                        </tbody>
+                    </table>
                 `;
-            }).join("") : `<p style="text-align: center; color: var(--text-muted)">No active pickup requests.</p>`;
+            }
+            
+            document.getElementById("stat-pending").innerText = pending;
+            document.getElementById("stat-picked").innerText = picked;
+            document.getElementById("stat-converted").innerText = converted; 
         }
 
         async function requestPickup() {

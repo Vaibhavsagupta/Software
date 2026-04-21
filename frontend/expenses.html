@@ -32,33 +32,47 @@
         <div class="content-wrapper">
             <!-- SIDE PANEL -->
             <div class="side-panel">
-                <h4 style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Manage Expenses</h4>
+                <h4 style="margin-bottom: 20px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Expense Manager</h4>
                 <div class="add-client-form" style="border-top: none; padding-top: 0;">
-                    <input id="title" type="text" placeholder="Expense Title">
-                    <input id="amount" type="number" placeholder="Amount (₹)">
-                    <button class="btn-primary" onclick="addExpense()">Record Expense</button>
+                    <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 8px;">TITLE</label>
+                    <input id="title" type="text" placeholder="e.g. Electricity Bill" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main);">
+                    
+                    <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 8px;">AMOUNT (₹)</label>
+                    <input id="amount" type="number" placeholder="0.00" style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main);">
+                    
+                    <button class="btn-primary" onclick="addExpense()">💸 Record Expense</button>
                 </div>
             </div>
 
             <!-- MAIN CONTENT -->
             <div class="main-content">
                 <div class="header-section">
-                    <h1 class="client-title">Financial Outflow / Expenses</h1>
+                    <div>
+                        <h1 class="client-title">Financial Outflow</h1>
+                        <p style="color: var(--text-muted); margin-top: 5px;">Track all laboratory overheads and operational costs.</p>
+                    </div>
                 </div>
 
                 <div class="grid-2">
-                    <div class="card">
-                        <h3 style="margin-bottom: 20px;">Recent Expenses</h3>
-                        <div id="expense-list">
-                            <p style="text-align: center; color: var(--text-muted)">Loading...</p>
+                    <div class="card" style="padding: 0; overflow: hidden;">
+                        <div style="padding: 20px 25px; border-bottom: 1px solid var(--border);">
+                            <h3 style="font-size: 1.1rem; font-weight: 700;">Recent Transactions</h3>
+                        </div>
+                        <div id="expense-list" style="padding: 0;">
+                            <!-- List will be populated here -->
+                            <div style="text-align: center; padding: 40px; color: var(--text-muted)">
+                                <div class="loading-spinner"></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="card" style="border-left: 5px solid var(--danger);">
-                        <h3>Monthly Summary</h3>
-                        <div id="expense-summary" style="margin-top: 20px;">
-                            <div class="stat-card">
-                                <div class="stat-label">Total Burn</div>
-                                <div class="stat-value" id="total-expense">₹0</div>
+
+                    <div class="card" style="border-left: 5px solid var(--danger); background: linear-gradient(135deg, #ffffff, #fff5f5);">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 20px;">Monthly Summary</h3>
+                        <div id="expense-summary">
+                            <div class="stat-card" style="background: transparent; border: none; padding: 0;">
+                                <div class="stat-label">Total Monthly Burn</div>
+                                <div class="stat-value" id="total-expense" style="font-size: 2.5rem; color: var(--danger);">₹0</div>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Calculated from all recorded expenses in the current billing cycle.</p>
                             </div>
                         </div>
                     </div>
@@ -73,18 +87,33 @@
             const list = document.getElementById("expense-list");
             let total = 0;
 
-            list.innerHTML = expenses.length ? expenses.map(e => {
-                total += e.amount;
-                return `
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 10px 0;">
-                    <div>
-                        <div style="font-weight: 600;">${e.title}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted)">${new Date(e.created_at).toLocaleDateString()}</div>
-                    </div>
-                    <div style="font-weight: 700; color: var(--danger);">₹${e.amount.toLocaleString()}</div>
-                </div>
+            if (!expenses || expenses.length === 0) {
+                list.innerHTML = `<div style="text-align: center; padding: 60px; color: var(--text-muted)">No expenses recorded yet.</div>`;
+            } else {
+                list.innerHTML = `
+                    <table class="erp-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Date</th>
+                                <th style="text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${expenses.map(e => {
+                                total += e.amount;
+                                return `
+                                <tr>
+                                    <td style="font-weight: 600;">${e.title}</td>
+                                    <td>${new Date(e.created_at).toLocaleDateString()}</td>
+                                    <td style="text-align: right; font-weight: 700; color: var(--danger);">₹${e.amount.toLocaleString()}</td>
+                                </tr>
+                                `;
+                            }).join("")}
+                        </tbody>
+                    </table>
                 `;
-            }).join("") : `<p style="text-align: center; color: var(--text-muted)">No expenses recorded.</p>`;
+            }
 
             document.getElementById("total-expense").innerText = "₹" + total.toLocaleString();
         }
@@ -94,10 +123,14 @@
             const amount = document.getElementById("amount").value;
             if(!title || !amount) return alert("Title and Amount required");
 
-            await postData("/expenses/", { title, amount: parseFloat(amount) });
-            document.getElementById("title").value = "";
-            document.getElementById("amount").value = "";
-            loadExpenses();
+            const res = await postData("/expenses/", { title, amount: parseFloat(amount) });
+            if (res.msg) {
+                document.getElementById("title").value = "";
+                document.getElementById("amount").value = "";
+                loadExpenses();
+            } else {
+                alert("Error: " + (res.error || "Failed to save"));
+            }
         }
 
         loadExpenses();
