@@ -133,14 +133,22 @@
             `;
         }
 
-        // 🔍 ADVANCED SEARCH VIEWS
+        // 🔍 ADVANCED PICKUP VIEWS (Search & Do Pickups)
         async function loadPickupSearch() {
-            setActiveNavItem("pickup-search");
+            renderPickupSearchUI("Ignore", "Search Pickup Requests");
+        }
+
+        async function loadPickups() {
+            // "Do Pickups" in image shows the same search UI but with "Not Picked Up" status
+            renderPickupSearchUI("pending", "Search Pickup Requests");
+        }
+
+        async function renderPickupSearchUI(defaultStatus, title) {
+            setActiveNavItem(defaultStatus === "pending" ? "pickup-all" : "pickup-search");
             const grid = document.getElementById("data-grid");
             grid.innerHTML = "";
-            document.getElementById("view-title").innerText = "Search Pickup Requests";
+            document.getElementById("view-title").innerText = title;
             
-            // Fetch clients for dropdown
             const clients = await getData("/clients") || [];
 
             grid.innerHTML = `
@@ -159,8 +167,8 @@
                         <div>
                             <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 5px;">Pickup Status</label>
                             <select id="p-search-status" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
-                                <option value="Ignore">Ignore</option>
-                                <option value="pending">Pending</option>
+                                <option value="Ignore" ${defaultStatus === "Ignore" ? 'selected' : ''}>Ignore</option>
+                                <option value="pending" ${defaultStatus === "pending" ? 'selected' : ''}>Not Picked Up</option>
                                 <option value="completed">Completed</option>
                                 <option value="converted">Converted</option>
                             </select>
@@ -239,10 +247,6 @@
                 </div>
 
                 <div id="pickup-results-container" style="grid-column: 1/-1; margin-top: 20px;">
-                    <div style="text-align: center; padding: 40px; color: var(--text-muted); border: 1px dashed #cbd5e1; border-radius: 8px;">
-                        No PickupRequest records found for current search criterion.<br>
-                        Add a new PickupRequest or broaden your search criterion
-                    </div>
                 </div>
             `;
             
@@ -252,6 +256,18 @@
             const lastDay = today.toISOString().split('T')[0];
             document.getElementById("p-search-start").value = firstDay;
             document.getElementById("p-search-end").value = lastDay;
+
+            // Trigger initial search for "Do Pickups"
+            if (defaultStatus !== "Ignore") {
+                executePickupSearch();
+            } else {
+                document.getElementById("pickup-results-container").innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted); border: 1px dashed #cbd5e1; border-radius: 8px;">
+                        No PickupRequest records found for current search criterion.<br>
+                        Add a new PickupRequest or broaden your search criterion
+                    </div>
+                `;
+            }
         }
 
         async function executePickupSearch() {
@@ -286,18 +302,6 @@
         }
 
         // 📦 PICKUPS RENDER
-        async function loadPickups() {
-            setActiveNavItem("pickup-all");
-            const data = await getData("/orders/pickup");
-            renderPickups(data, "All Pickup Requests");
-        }
-
-        async function filterPickup(status) {
-            setActiveNavItem("pickup-" + status);
-            const data = await getData(`/orders/pickup/status/${status}`);
-            renderPickups(data, `${status.charAt(0).toUpperCase() + status.slice(1)} Pickups`);
-        }
-
         function renderPickups(data, title, targetEl = null) {
             const grid = targetEl || document.getElementById("data-grid");
             if (!targetEl) document.getElementById("view-title").innerText = title;
