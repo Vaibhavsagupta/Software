@@ -29,6 +29,9 @@ app.add_middleware(
 )
 
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
 # Include routes
 app.include_router(auth.router)
 app.include_router(clients.router)
@@ -39,16 +42,21 @@ app.include_router(accounts.router)
 app.include_router(dashboard.router)
 app.include_router(expenses.router)
 
+# Serve Static Files
+frontend_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
+app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
+@app.get("/")
+def read_root():
+    return FileResponse(os.path.join(frontend_path, "index.html"))
 
-
-
+@app.get("/{full_path:path}")
+def serve_all(full_path: str):
+    file_path = os.path.join(frontend_path, full_path)
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        return FileResponse(file_path)
+    return FileResponse(os.path.join(frontend_path, "index.html"))
 
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return ""
-
-@app.get("/")
-def home():
-    return {"message": "ERP Running 🚀"}
-
