@@ -60,6 +60,16 @@ class Pickup(Base):
     status = Column(String, default="pending")  # pending / completed / converted
     created_at = Column(DateTime, default=datetime.utcnow)
     note = Column(String, nullable=True)
+    
+    # New Fields for Advanced Tracking
+    assigned_to = Column(String, nullable=True)
+    done_by = Column(String, nullable=True)
+    route = Column(String, nullable=True)
+    delivery_plan = Column(String, nullable=True)
+    scheduled_date = Column(DateTime, nullable=True)
+    picked_up_date = Column(DateTime, nullable=True)
+
+    client = relationship("Client")
 
 # 🚚 SHIPMENT
 class Shipment(Base):

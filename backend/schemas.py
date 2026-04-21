@@ -171,6 +171,10 @@ class AdjustmentOut(AdjustmentBase):
 class PickupCreate(BaseModel):
     client_id: int
     note: Optional[str] = None
+    assigned_to: Optional[str] = None
+    route: Optional[str] = None
+    delivery_plan: Optional[str] = None
+    scheduled_date: Optional[datetime] = None
 
 class PickupOut(BaseModel):
     id: int
@@ -178,6 +182,13 @@ class PickupOut(BaseModel):
     status: str
     created_at: datetime
     note: Optional[str] = None
+    assigned_to: Optional[str] = None
+    done_by: Optional[str] = None
+    route: Optional[str] = None
+    delivery_plan: Optional[str] = None
+    scheduled_date: Optional[datetime] = None
+    picked_up_date: Optional[datetime] = None
+    client: Optional[ClientOut] = None
     class Config:
         from_attributes = True
 

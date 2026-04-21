@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import String
 from sqlalchemy.orm import Session
 from models import Order, Pickup, Shipment
 from schemas import OrderCreate, PickupCreate
 from deps import get_db
 from datetime import datetime, timedelta
+from typing import Optional
 from utils.deps import staff_only, admin_only
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
@@ -77,14 +79,76 @@ def delete_order(id: int, db: Session = Depends(get_db)):
 # ➕ PICKUP APIs
 @router.post("/pickup", dependencies=[Depends(staff_only)])
 def create_pickup(data: PickupCreate, db: Session = Depends(get_db)):
-    pickup = Pickup(client_id=data.client_id, note=data.note)
+    pickup = Pickup(
+        client_id=data.client_id, 
+        note=data.note,
+        assigned_to=data.assigned_to,
+        route=data.route,
+        delivery_plan=data.delivery_plan,
+        scheduled_date=data.scheduled_date
+    )
     db.add(pickup)
     db.commit()
+    db.refresh(pickup)
     return pickup
 
 @router.get("/pickup", dependencies=[Depends(staff_only)])
-def get_pickups(db: Session = Depends(get_db)):
-    return db.query(Pickup).all()
+def get_pickups(
+    status: Optional[str] = None,
+    client_id: Optional[int] = None,
+    search: Optional[str] = None,
+    assigned_to: Optional[str] = None,
+    done_by: Optional[str] = None,
+    route: Optional[str] = None,
+    delivery_plan: Optional[str] = None,
+    date_field: Optional[str] = "request_date", # request_date, scheduled_date, picked_up_date
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    order_created: Optional[str] = "Ignore",
+    db: Session = Depends(get_db)
+):
+    query = db.query(Pickup)
+    
+    if status and status != "Ignore":
+        query = query.filter(Pickup.status == status)
+    
+    if client_id:
+        query = query.filter(Pickup.client_id == client_id)
+        
+    if search:
+        query = query.filter(
+            (Pickup.id.cast(String).contains(search)) | 
+            (Pickup.note.contains(search))
+        )
+
+    if assigned_to and assigned_to != "Ignore":
+        query = query.filter(Pickup.assigned_to == assigned_to)
+        
+    if done_by and done_by != "Ignore":
+        query = query.filter(Pickup.done_by == done_by)
+        
+    if route and route != "Ignore":
+        query = query.filter(Pickup.route == route)
+        
+    if delivery_plan and delivery_plan != "Ignore":
+        query = query.filter(Pickup.delivery_plan == delivery_plan)
+        
+    if order_created == "Yes":
+        query = query.filter(Pickup.status == "converted")
+    elif order_created == "No":
+        query = query.filter(Pickup.status != "converted")
+
+    # Date Filtering
+    col = Pickup.created_at
+    if date_field == "scheduled_date": col = Pickup.scheduled_date
+    elif date_field == "picked_up_date": col = Pickup.picked_up_date
+    
+    if start_date:
+        query = query.filter(col >= start_date)
+    if end_date:
+        query = query.filter(col <= end_date)
+
+    return query.all()
 
 
 # 🔥 1. OVERDUE ORDERS
