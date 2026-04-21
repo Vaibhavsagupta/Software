@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental ERP | Pickup Requests</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/api.js"></script>
+    
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- TOP NAVBAR -->
+        <div class="navbar">
+            <h2 onclick="window.location.href='index.html'">Lab Command</h2>
+            <div class="navbar-content">
+                <div class="sidebar-nav">
+                    <div class="nav-item" onclick="window.location.href='index.html'"><span>🏠 Dashboard</span></div>
+                    <div class="nav-item" onclick="window.location.href='clients.html'"><span>👥 Clients</span></div>
+                    <div class="nav-item" onclick="window.location.href='orders.html'"><span>📦 Orders</span></div>
+                    <div class="nav-item active" onclick="window.location.href='pickups.html'"><span>🚚 Pickups</span></div>
+                    <div class="nav-item" onclick="window.location.href='shipments.html'"><span>🚚 Shipments</span></div>
+                    <div class="nav-item" onclick="window.location.href='accounts.html'"><span>💰 Accounts</span></div>
+                    <div class="nav-item" onclick="go('expenses.html')"><span>💸 Expenses</span></div>
+                </div>
+            </div>
+            <div class="navbar-actions">
+                <button class="btn-primary" style="background: var(--danger); width: auto; padding: 8px 16px; font-size: 0.8rem;" onclick="logout()">🚪 Exit</button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <!-- SIDE PANEL -->
+            <div class="side-panel">
+                <h4 style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Request Logistics</h4>
+                <div class="add-client-form" style="border-top: none; padding-top: 0;">
+                    <select id="client-select" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 12px; border: 1px solid var(--border);">
+                        <option value="">Select Client</option>
+                    </select>
+                    <button class="btn-primary" onclick="requestPickup()">Create Request</button>
+                </div>
+            </div>
+
+            <!-- MAIN CONTENT -->
+            <div class="main-content">
+                <div class="header-section">
+                    <h1 class="client-title">Logistics & Pickups</h1>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">Active Pickup Requests</h3>
+                    <div id="pickup-list">
+                        <p style="text-align: center; color: var(--text-muted)">Loading pickups...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            // Load Clients for dropdown
+            const clients = await getData("/clients");
+            const select = document.getElementById("client-select");
+            clients.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.id;
+                opt.innerText = c.name;
+                select.appendChild(opt);
+            });
+
+            // Load Pickups
+            const pickups = await getData("/pickups");
+            const list = document.getElementById("pickup-list");
+            list.innerHTML = pickups.length ? pickups.map(p => {
+                const clientName = clients.find(c => c.id === p.client_id)?.name || "Unknown";
+                return `
+                <div class="card" style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 1.1rem;">${clientName}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted)">Requested on: ${new Date(p.created_at).toLocaleString()}</div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <span class="status-badge ${p.status === 'picked' ? 'badge-green' : 'badge-orange'}">${p.status.toUpperCase()}</span>
+                        ${p.status !== 'picked' ? `<button class="btn-primary" style="padding: 5px 10px; font-size: 0.7rem;" onclick="markPicked(${p.id})">Mark Picked</button>` : ''}
+                        ${p.status === 'picked' ? `<button class="btn-primary" style="padding: 5px 10px; font-size: 0.7rem; background: var(--accent);" onclick="createOrder(${p.id})">Create Order</button>` : ''}
+                    </div>
+                </div>
+                `;
+            }).join("") : `<p style="text-align: center; color: var(--text-muted)">No active pickup requests.</p>`;
+        }
+
+        async function requestPickup() {
+            const clientId = document.getElementById("client-select").value;
+            if(!clientId) return alert("Select a client");
+            await postData("/pickups/", { client_id: parseInt(clientId) });
+            loadData();
+        }
+
+        async function markPicked(id) {
+            await putData(`/pickups/${id}/pickup`);
+            loadData();
+        }
+
+        async function createOrder(id) {
+            await postData(`/pickups/${id}/create-order`);
+            alert("Order created successfully!");
+            window.location.href = 'orders.html';
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

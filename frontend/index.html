@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental ERP | Command Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/api.js"></script>
+    <style>
+        :root {
+            --sidebar-bg: #fdfdfe;
+            --card-border: rgba(0, 0, 0, 0.05);
+            --blue-accent: #2563eb;
+            --pink-accent: #f472b6;
+            --success: #10b981;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            overflow: hidden;
+        }
+
+        .navbar {
+            padding: 0 20px;
+            height: 60px;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .navbar h2 {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar h2::before {
+            content: "\f05b"; /* Crosshair icon */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: #ef4444;
+            font-size: 1.5rem;
+        }
+
+        .nav-item {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .nav-item.active {
+            background: rgba(79, 70, 229, 0.05);
+            color: var(--primary);
+            box-shadow: none;
+            border-bottom: 2px solid var(--primary);
+            border-radius: 0;
+        }
+
+        .content-wrapper {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        /* Sidebar Styling */
+        .perf-sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            flex-shrink: 0;
+        }
+
+        .perf-sidebar h3 {
+            font-size: 0.9rem;
+            color: #1e293b;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .perf-list {
+            list-style: none;
+        }
+
+        .perf-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.85rem;
+            color: #475569;
+            border-bottom: 1px solid #f8fafc;
+        }
+
+        .perf-item .value {
+            font-weight: 600;
+            color: var(--blue-accent);
+        }
+
+        .quick-links {
+            margin-top: auto;
+            padding-top: 20px;
+        }
+
+        .quick-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            color: var(--blue-accent);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .quick-link i {
+            font-size: 0.75rem;
+        }
+
+        /* Main Area Styling */
+        .main-workspace {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .workflow-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: 220px 1fr 220px;
+            gap: 2px;
+            background: #e2e8f0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .grid-col {
+            background: #fff;
+            padding: 0;
+        }
+
+        .col-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .col-header i {
+            color: var(--blue-accent);
+            cursor: pointer;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table td {
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .data-table tr:last-child td { border-bottom: none; }
+
+        .data-table .val {
+            text-align: right;
+            font-weight: 600;
+            color: var(--blue-accent);
+        }
+
+        /* Middle Column Special Stats */
+        .summary-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--blue-accent);
+            font-weight: 500;
+        }
+
+        .summary-card.pending {
+            border-color: var(--pink-accent);
+            color: #be185d;
+        }
+
+        .summary-card i {
+            font-size: 1.2rem;
+            color: var(--blue-accent);
+        }
+
+        .summary-card.pending i {
+            color: var(--pink-accent);
+        }
+
+        /* Bottom Intelligence Alerts */
+        .intel-alerts {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .intel-item {
+            font-size: 0.85rem;
+            color: #475569;
+            padding-left: 10px;
+            border-left: 3px solid #e2e8f0;
+        }
+
+        .intel-item.active {
+            border-left-color: var(--primary);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- TOP NAVBAR -->
+        <div class="navbar">
+            <h2 onclick="go('index.html')">Labyx</h2>
+            <div class="navbar-content">
+                <div class="sidebar-nav">
+                    <div class="nav-item active" onclick="go('index.html')"><span><i class="fa fa-home"></i> Home</span></div>
+                    <div class="nav-item" onclick="go('clients.html')"><span><i class="fa fa-users"></i> Clients</span></div>
+                    <div class="nav-item" onclick="go('orders.html')"><span><i class="fa fa-box"></i> Orders</span></div>
+                    <div class="nav-item" onclick="go('shipments.html')"><span><i class="fa fa-truck"></i> Shipments</span></div>
+                    <div class="nav-item" onclick="go('accounts.html')"><span><i class="fa fa-wallet"></i> Accounts</span></div>
+                </div>
+            </div>
+            <div class="navbar-actions">
+                <div class="nav-item"><i class="fa fa-building"></i> Office</div>
+                <div class="nav-item"><i class="fa fa-chart-line"></i> Reports</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">SOHAR DENTAL LA...</div>
+                <button class="btn-primary" style="background: var(--danger); width: auto; padding: 5px 10px; font-size: 0.7rem;" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <!-- SIDEBAR: PERFORMANCE -->
+            <div class="perf-sidebar">
+                <h3>Lab Performance Today</h3>
+                <ul class="perf-list">
+                    <li class="perf-item"><span>New Clients</span><span class="value" id="stat-new-clients">1</span></li>
+                    <li class="perf-item"><span>New Orders</span><span class="value" id="stat-new-orders">38</span></li>
+                    <li class="perf-item"><span>Tryins Dispatched</span><span class="value" id="stat-tryins-out">0</span></li>
+                    <li class="perf-item"><span>Tryins Returned</span><span class="value" id="stat-tryins-in">0</span></li>
+                    <li class="perf-item"><span>Final Deliveries done</span><span class="value" id="stat-deliveries">26</span></li>
+                    <li class="perf-item"><span>Invoiced Amount</span><span class="value" id="stat-invoiced">712</span></li>
+                    <li class="perf-item"><span>Collection</span><span class="value" id="stat-collection">0</span></li>
+                    <li class="perf-item"><span>Expenses</span><span class="value" id="stat-expenses">0</span></li>
+                    <li class="perf-item"><span>Profit/Loss</span><span class="value" id="stat-profit">0</span></li>
+                </ul>
+
+                <div class="quick-links">
+                    <a href="javascript:void(0)" class="quick-link" onclick="go('orders.html')">New Order <i class="fa fa-arrow-circle-right"></i></a>
+                    <a href="javascript:void(0)" class="quick-link" onclick="go('clients.html')">New Client <i class="fa fa-arrow-circle-right"></i></a>
+                    <a href="javascript:void(0)" class="quick-link" onclick="go('accounts.html')">New Payment <i class="fa fa-arrow-circle-right"></i></a>
+                    <a href="javascript:void(0)" class="quick-link" onclick="go('expenses.html')">New Expense <i class="fa fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+
+            <!-- MAIN WORKSPACE -->
+            <div class="main-workspace">
+                <div class="workflow-header">Lab Workflow Summary</div>
+
+                <div class="workflow-grid">
+                    <!-- Column 1: Order Status -->
+                    <div class="grid-col">
+                        <div class="col-header">Order status <i class="fa fa-print"></i></div>
+                        <table class="data-table">
+                            <tr><td>New</td><td class="val" id="ws-new">118</td></tr>
+                            <tr><td>In Production</td><td class="val" id="ws-prod">0</td></tr>
+                            <tr><td>Complete</td><td class="val" id="ws-comp">15</td></tr>
+                            <tr><td>Hold</td><td class="val" id="ws-hold">81</td></tr>
+                            <tr><td>Try In</td><td class="val" id="ws-tryin">255</td></tr>
+                        </table>
+                    </div>
+
+                    <!-- Column 2: Summary Stats -->
+                    <div class="grid-col">
+                        <div class="summary-card pending">
+                            <span>425 Final Deliveries Pending today</span>
+                            <i class="fa fa-print"></i>
+                        </div>
+                        <div class="summary-card">
+                            <span>41 Final Deliveries expected today</span>
+                            <i class="fa fa-print"></i>
+                        </div>
+                        <div class="summary-card">
+                            <span>0 Order with TryIn Deliveries scheduled today</span>
+                            <i class="fa fa-print"></i>
+                        </div>
+                        <div class="summary-card">
+                            <span>517 Orders yet to be invoiced</span>
+                            <i class="fa fa-print"></i>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: Date/Due -->
+                    <div class="grid-col">
+                        <div class="col-header"><span>Date</span> <span><i class="fa fa-print"></i> Due</span></div>
+                        <table class="data-table">
+                            <tr><td>19 Apr</td><td class="val">41</td></tr>
+                            <tr><td>20 Apr</td><td class="val">35</td></tr>
+                            <tr><td>21 Apr</td><td class="val">1</td></tr>
+                            <tr><td>22 Apr</td><td class="val">0</td></tr>
+                            <tr><td>23 Apr</td><td class="val">0</td></tr>
+                            <tr><td>24 Apr</td><td class="val">0</td></tr>
+                            <tr><td>25 Apr</td><td class="val">0</td></tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- BOTTOM ALERTS -->
+                <div class="intel-alerts">
+                    <div class="intel-item">244 Pending TryIns</div>
+                    <div class="intel-item">78 Pending OnHold</div>
+                    <div class="intel-item">No client has exceeded his Credit limit</div>
+                    <div class="intel-item">1816 Pending Bills-Past Due Date</div>
+                    <div class="intel-item">53 clients have placed lesser orders</div>
+                    <div class="intel-item">225 clients have not placed any orders</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 📊 DATA LOADING (Updated to map to new IDs)
+        async function loadDashboard() {
+            try {
+                const perf = await getData("/dashboard/performance");
+                const alerts = await getData("/dashboard/alerts");
+                const workflow = await getData("/dashboard/workflow"); // Assuming this endpoint might exist or we use defaults
+                
+                if (perf) {
+                    document.getElementById("stat-new-clients").innerText = perf.new_clients || 1;
+                    document.getElementById("stat-new-orders").innerText = perf.new_orders || 38;
+                    document.getElementById("stat-tryins-out").innerText = perf.tryin_dispatched || 0;
+                    document.getElementById("stat-deliveries").innerText = perf.final_deliveries || 26;
+                    document.getElementById("stat-invoiced").innerText = (perf.invoiced_amount || 712).toLocaleString();
+                    document.getElementById("stat-collection").innerText = (perf.collection || 0).toLocaleString();
+                    document.getElementById("stat-expenses").innerText = (perf.expenses || 0).toLocaleString();
+                    document.getElementById("stat-profit").innerText = (perf.profit_loss || 0).toLocaleString();
+                }
+
+                if (alerts) {
+                    // Update bottom intel list dynamically if needed
+                }
+            } catch (e) {
+                console.error("Dashboard Sync Failed", e);
+            }
+        }
+
+        // INIT
+        loadDashboard();
+    </script>
+</body>
+</html>

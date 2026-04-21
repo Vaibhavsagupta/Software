@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental ERP | Expense Tracking</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/api.js"></script>
+    
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- TOP NAVBAR -->
+        <div class="navbar">
+            <h2 onclick="window.location.href='index.html'">Lab Command</h2>
+            <div class="navbar-content">
+                <div class="sidebar-nav">
+                    <div class="nav-item" onclick="window.location.href='index.html'"><span>🏠 Dashboard</span></div>
+                    <div class="nav-item" onclick="window.location.href='clients.html'"><span>👥 Clients</span></div>
+                    <div class="nav-item" onclick="window.location.href='orders.html'"><span>📦 Orders</span></div>
+                    <div class="nav-item" onclick="window.location.href='pickups.html'"><span>🚚 Pickups</span></div>
+                    <div class="nav-item" onclick="window.location.href='shipments.html'"><span>🚚 Shipments</span></div>
+                    <div class="nav-item" onclick="window.location.href='accounts.html'"><span>💰 Accounts</span></div>
+                    <div class="nav-item active" onclick="go('expenses.html')"><span>💸 Expenses</span></div>
+                </div>
+            </div>
+            <div class="navbar-actions">
+                <button class="btn-primary" style="background: var(--danger); width: auto; padding: 8px 16px; font-size: 0.8rem;" onclick="logout()">🚪 Exit</button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <!-- SIDE PANEL -->
+            <div class="side-panel">
+                <h4 style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Manage Expenses</h4>
+                <div class="add-client-form" style="border-top: none; padding-top: 0;">
+                    <input id="title" type="text" placeholder="Expense Title">
+                    <input id="amount" type="number" placeholder="Amount (₹)">
+                    <button class="btn-primary" onclick="addExpense()">Record Expense</button>
+                </div>
+            </div>
+
+            <!-- MAIN CONTENT -->
+            <div class="main-content">
+                <div class="header-section">
+                    <h1 class="client-title">Financial Outflow / Expenses</h1>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h3 style="margin-bottom: 20px;">Recent Expenses</h3>
+                        <div id="expense-list">
+                            <p style="text-align: center; color: var(--text-muted)">Loading...</p>
+                        </div>
+                    </div>
+                    <div class="card" style="border-left: 5px solid var(--danger);">
+                        <h3>Monthly Summary</h3>
+                        <div id="expense-summary" style="margin-top: 20px;">
+                            <div class="stat-card">
+                                <div class="stat-label">Total Burn</div>
+                                <div class="stat-value" id="total-expense">₹0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadExpenses() {
+            const expenses = await getData("/expenses/");
+            const list = document.getElementById("expense-list");
+            let total = 0;
+
+            list.innerHTML = expenses.length ? expenses.map(e => {
+                total += e.amount;
+                return `
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 10px 0;">
+                    <div>
+                        <div style="font-weight: 600;">${e.title}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted)">${new Date(e.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div style="font-weight: 700; color: var(--danger);">₹${e.amount.toLocaleString()}</div>
+                </div>
+                `;
+            }).join("") : `<p style="text-align: center; color: var(--text-muted)">No expenses recorded.</p>`;
+
+            document.getElementById("total-expense").innerText = "₹" + total.toLocaleString();
+        }
+
+        async function addExpense() {
+            const title = document.getElementById("title").value;
+            const amount = document.getElementById("amount").value;
+            if(!title || !amount) return alert("Title and Amount required");
+
+            await postData("/expenses/", { title, amount: parseFloat(amount) });
+            document.getElementById("title").value = "";
+            document.getElementById("amount").value = "";
+            loadExpenses();
+        }
+
+        loadExpenses();
+    </script>
+</body>
+</html>

@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental ERP | Client Management</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/api.js"></script>
+    
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- TOP NAVBAR -->
+        <div class="navbar">
+            <h2 onclick="window.location.href='index.html'">Lab Command</h2>
+            <div class="navbar-content">
+                <div class="sidebar-nav">
+                    <div class="nav-item" onclick="window.location.href='index.html'"><span>🏠 Dashboard</span></div>
+                    <div class="nav-item active" onclick="window.location.href='clients.html'"><span>👥 Clients</span></div>
+                    <div class="nav-item" onclick="window.location.href='orders.html'"><span>📦 Orders</span></div>
+                    <div class="nav-item" onclick="window.location.href='pickups.html'"><span>🚚 Pickups</span></div>
+                    <div class="nav-item" onclick="window.location.href='shipments.html'"><span>🚚 Shipments</span></div>
+                    <div class="nav-item" onclick="window.location.href='accounts.html'"><span>💰 Accounts</span></div>
+                    <div class="nav-item" onclick="go('expenses.html')"><span>💸 Expenses</span></div>
+                </div>
+            </div>
+            <div class="navbar-actions">
+                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    Secured: <span id="user-role" style="color: var(--accent); font-weight: 600;">...</span>
+                </div>
+                <button class="btn-primary" style="background: var(--danger); width: auto; padding: 8px 16px; font-size: 0.8rem;" onclick="logout()">🚪 Exit</button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <!-- SIDE PANEL -->
+            <div class="side-panel">
+                <div class="sidebar-nav">
+                    <h4 style="margin: 0 0 10px 10px; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Quick Search</h4>
+                    <div class="search-box" style="width: 100%; margin-bottom: 20px;">
+                        <input id="search" type="text" placeholder="Start typing..." onkeyup="searchClient()">
+                    </div>
+
+                    <h4 style="margin: 0 0 10px 10px; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Client Console</h4>
+                    <div class="nav-item active" id="nav-details" onclick="showTab('details')"><span>👤 Details</span></div>
+                    <div class="nav-item" id="nav-orders" onclick="showTab('orders')"><span>📦 Orders</span></div>
+                    <div class="nav-item" id="nav-shipments" onclick="showTab('shipments')"><span>🚚 Shipments</span></div>
+                    <div class="nav-item" id="nav-bills" onclick="showTab('bills')"><span>💵 Bills</span></div>
+                    <div class="nav-item" id="nav-collections" onclick="showTab('collections')"><span>🏦 Collections</span></div>
+                    <div class="nav-item" id="nav-new-client" onclick="showTab('new-client')"><span>🆕 New Clients</span></div>
+                    <div class="nav-item" id="nav-messages" onclick="showTab('messages')"><span>💬 Messages</span></div>
+                    <div class="nav-item" id="nav-documents" onclick="showTab('documents')"><span>📂 Documents</span></div>
+                    <div class="nav-item" id="nav-analysis" onclick="showTab('analysis')"><span>📊 Analysis</span></div>
+                    <div class="nav-item" id="nav-tasks" onclick="showTab('tasks')"><span>✅ Tasks</span></div>
+                </div>
+
+                <hr style="opacity: 0.1; margin: 20px 0;">
+
+                <div class="client-list" id="client_list">
+                    <!-- Client items injected here -->
+                </div>
+            </div>
+
+            <!-- MAIN CONTENT -->
+            <div class="main-content">
+                <div class="header-section">
+                    <h1 class="client-title" id="client_name">Select a Client</h1>
+                </div>
+
+                <div class="tab-container">
+                    <!-- DETAILS TAB -->
+                    <div id="details" class="tab-content">
+                        <div class="card" style="margin-bottom: 24px; background: rgba(79, 70, 229, 0.02);">
+                            <h2 style="font-size: 1.1rem; margin-bottom: 15px; color: var(--text-main);">Advanced Client Search</h2>
+                            <div style="display: flex; gap: 15px; align-items: center; font-size: 0.85rem; font-weight: 500;">
+                                <select id="search-criterion" style="padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: white; color: var(--primary);">
+                                    <option value="name">Name</option>
+                                    <option value="city">City</option>
+                                    <option value="phone">Phone</option>
+                                    <option value="email">Email</option>
+                                </select>
+                                <input id="advanced-search-input" type="text" placeholder="Enter value..." style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
+                                <span style="cursor: pointer; color: var(--primary);" onclick="advancedSearch()">🔍 Search</span>
+                            </div>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="card">
+                                <h3 style="margin-bottom: 20px;">Contact Info</h3>
+                                <div id="details-content">
+                                    <p style="color: var(--text-muted)">Please select a client from the list.</p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <h3 style="margin-bottom: 20px;">Financial Summary</h3>
+                                <div id="financial-summary-content"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NEW CLIENTS TAB -->
+                    <div id="new-client" class="tab-content" style="display: none;">
+                        <div class="card" style="margin-bottom: 20px;">
+                            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted);">REG DATE</label>
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                        <select style="padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border);">
+                                            <option>Recent</option>
+                                        </select>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                        <span>to</span>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 15px; font-size: 0.85rem; color: var(--primary);">
+                                    <span style="cursor: pointer;" onclick="document.getElementById('advanced-search-input').focus(); showTab('details');">🔍 Search</span>
+                                    <span style="cursor: pointer;" onclick="document.getElementById('reg-form-container').style.display='block';">➕ New Client</span>
+                                </div>
+                            </div>
+
+                            <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead style="background: var(--bg-main); text-align: left;">
+                                    <tr>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Sr</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Name</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Value</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Num</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Actions</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Code</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Office Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Cell Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">City</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="new-clients-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Registration Form (Hidden by default) -->
+                        <div id="reg-form-container" class="card" style="display: none; max-width: 500px; margin-top: 20px; border: 2px solid var(--primary);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h3 style="margin: 0;">Register New Client</h3>
+                                <span style="cursor: pointer; font-size: 1.2rem;" onclick="document.getElementById('reg-form-container').style.display='none';">×</span>
+                            </div>
+                            <div class="add-client-form" style="border: none; padding: 0;">
+                                <input id="name" type="text" placeholder="Full Name">
+                                <input id="phone" type="text" placeholder="Phone Number">
+                                <input id="city" type="text" placeholder="City">
+                                <input id="email" type="text" placeholder="Email Address">
+                                <button class="btn-primary" onclick="addClient()">Create Client Record</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ORDERS TAB -->
+                    <div id="orders" class="tab-content" style="display: none;">
+                        <div class="card" style="margin-bottom: 20px;">
+                            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted);">ORDER DATE</label>
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                        <select style="padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border);">
+                                            <option>Recent</option>
+                                        </select>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                        <span>to</span>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 15px; font-size: 0.85rem; color: var(--primary);">
+                                    <span style="cursor: pointer;" onclick="document.getElementById('advanced-search-input').focus(); showTab('details');">🔍 Search</span>
+                                    <span style="cursor: pointer;" onclick="showTab('new-client')">➕ New Client</span>
+                                </div>
+                            </div>
+
+                            <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead style="background: var(--bg-main); text-align: left;">
+                                    <tr>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Sr</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Name</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Value</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Num</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Actions</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Code</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Office Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Cell Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">City</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orders-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SHIPMENTS TAB -->
+                    <div id="shipments" class="tab-content" style="display: none;">
+                        <div class="card" style="margin-bottom: 20px;">
+                            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted);">SHIPMENT DATE</label>
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                        <select style="padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border);">
+                                            <option>Recent</option>
+                                        </select>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                        <span>to</span>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 15px; font-size: 0.85rem; color: var(--primary);">
+                                    <span style="cursor: pointer;" onclick="document.getElementById('advanced-search-input').focus(); showTab('details');">🔍 Search</span>
+                                    <span style="cursor: pointer;" onclick="showTab('new-client')">➕ New Client</span>
+                                </div>
+                            </div>
+
+                            <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead style="background: var(--bg-main); text-align: left;">
+                                    <tr>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Sr</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Name</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Value</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Num</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Actions</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Code</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Office Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Cell Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">City</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="shipments-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- BILLS TAB -->
+                    <div id="bills" class="tab-content" style="display: none;">
+                        <div class="card" style="margin-bottom: 20px;">
+                            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted);">INVOICE DATE</label>
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                        <select style="padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border);">
+                                            <option>Recent</option>
+                                        </select>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                        <span>to</span>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 15px; font-size: 0.85rem; color: var(--primary);">
+                                    <span style="cursor: pointer;" onclick="document.getElementById('advanced-search-input').focus(); showTab('details');">🔍 Search</span>
+                                    <span style="cursor: pointer;" onclick="showTab('new-client')">➕ New Client</span>
+                                </div>
+                            </div>
+
+                            <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead style="background: var(--bg-main); text-align: left;">
+                                    <tr>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Sr</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Name</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Value</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Num</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Actions</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Code</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Office Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Cell Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">City</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bills-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- COLLECTIONS TAB -->
+                    <div id="collections" class="tab-content" style="display: none;">
+                        <div class="card" style="margin-bottom: 20px;">
+                            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted);">PAYMENT DATE</label>
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                        <select style="padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border);">
+                                            <option>Recent</option>
+                                        </select>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                        <span>to</span>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 15px; font-size: 0.85rem; color: var(--primary);">
+                                    <span style="cursor: pointer;" onclick="document.getElementById('advanced-search-input').focus(); showTab('details');">🔍 Search</span>
+                                    <span style="cursor: pointer;" onclick="showTab('new-client')">➕ New Client</span>
+                                </div>
+                            </div>
+
+                            <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead style="background: var(--bg-main); text-align: left;">
+                                    <tr>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Sr</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Name</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Value</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Num</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Actions</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Code</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Office Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Cell Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">City</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="collections-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- MESSAGES TAB -->
+                    <div id="messages" class="tab-content" style="display: none;">
+                        <div class="card" style="margin-bottom: 20px;">
+                            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted);">MESSAGE DATE</label>
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                        <select style="padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border);">
+                                            <option>Recent</option>
+                                        </select>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                        <span>to</span>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 15px; font-size: 0.85rem; color: var(--primary);">
+                                    <span style="cursor: pointer;" onclick="document.getElementById('advanced-search-input').focus(); showTab('details');">🔍 Search</span>
+                                    <span style="cursor: pointer;" onclick="showTab('new-client')">➕ New Client</span>
+                                </div>
+                            </div>
+
+                            <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 20px;">
+                                <thead style="background: var(--bg-main); text-align: left;">
+                                    <tr>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Sr</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Name</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Value</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Num</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Actions</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Code</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Office Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Cell Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">City</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="messages-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+
+                            <h4 style="margin-bottom: 15px; border-top: 1px solid var(--border); padding-top: 20px;">Communication History</h4>
+                            <div id="messages-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; padding: 10px; background: var(--bg-main); border-radius: 8px;"></div>
+                            <div style="display: flex; gap: 10px;">
+                                <input id="msg-content" type="text" placeholder="Type a message and press Enter..." style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                                <button class="btn-primary" style="width: auto; padding: 0 20px;" onclick="sendMessage()">Send</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DOCUMENTS TAB -->
+                    <div id="documents" class="tab-content" style="display: none;">
+                        <div class="card" style="margin-bottom: 20px;">
+                            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted);">ORDER DATE</label>
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                        <select style="padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border);">
+                                            <option>Recent</option>
+                                        </select>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                        <span>to</span>
+                                        <input type="date" value="2026-04-18" style="padding: 5px; border: 1px solid var(--border); border-radius: 5px;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 15px; font-size: 0.85rem; color: var(--primary);">
+                                    <span style="cursor: pointer;" onclick="document.getElementById('advanced-search-input').focus(); showTab('details');">🔍 Search</span>
+                                    <span style="cursor: pointer;" onclick="showTab('new-client')">➕ New Client</span>
+                                </div>
+                            </div>
+
+                            <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 20px;">
+                                <thead style="background: var(--bg-main); text-align: left;">
+                                    <tr>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Sr</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Name</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Value</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Num</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Actions</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Code</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Office Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Cell Phone</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">City</th>
+                                        <th style="padding: 10px; border: 1px solid var(--border);">Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="documents-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+
+                            <h4 style="margin-bottom: 15px; border-top: 1px solid var(--border); padding-top: 20px;">File Depository</h4>
+                            <div id="documents-list" style="margin-bottom: 20px;"></div>
+                            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                <div style="flex: 1;">
+                                    <input id="doc-name" type="text" placeholder="Document Name (e.g. Agreement)" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                                </div>
+                                <button class="btn-primary" style="width: auto; padding: 10px 20px;" onclick="uploadDoc()">Log Document</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ANALYSIS TAB -->
+                    <div id="analysis" class="tab-content" style="display: none;">
+                        <div class="card">
+                            <h3 style="margin-bottom: 20px;">Intelligence & Analysis</h3>
+                            <div id="analysis-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- TASKS TAB -->
+                    <div id="tasks" class="tab-content" style="display: none;">
+                        <div class="card">
+                            <h3 style="margin-bottom: 20px;">Tasks & To-Dos</h3>
+                            <div id="tasks-list"></div>
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                                <input id="task-title" type="text" placeholder="Task Title">
+                                <button class="btn-primary" style="margin-top: 10px;" onclick="assignTask()">Assign Task</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentClientId = null;
+
+        // 🔄 LOAD CLIENTS
+        async function loadClients() {
+            try {
+                const data = await getData("/clients");
+                renderClientList(data);
+
+                // Populate "New Clients" table (Recent 10)
+                const newClientsTable = document.getElementById("new-clients-table-body");
+                if (newClientsTable) {
+                    newClientsTable.innerHTML = data.slice(-10).reverse().map((c, index) => `
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border);">${index + 1}</td>
+                            <td style="padding: 10px; border: 1px solid var(--border); font-weight: 500; color: var(--primary); font-size: 0.75rem;">${c.name.toUpperCase()}</td>
+                            <td style="padding: 10px; border: 1px solid var(--border); font-weight: 600;">0.00</td>
+                            <td style="padding: 10px; border: 1px solid var(--border);">0</td>
+                            <td style="padding: 10px; border: 1px solid var(--border);">
+                                <div style="display: flex; gap: 8px;">
+                                    <span title="View Details" style="cursor: pointer; opacity: 0.7; color: var(--primary);">📑</span>
+                                    <span title="Documents" style="cursor: pointer; opacity: 0.7; color: var(--primary);">💵</span>
+                                    <span title="Communication" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👥</span>
+                                    <span title="Profile" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👤</span>
+                                </div>
+                            </td>
+                            <td style="padding: 10px; border: 1px solid var(--border); color: var(--primary);">00${c.id}</td>
+                            <td style="padding: 10px; border: 1px solid var(--border);">${c.office_phone || '--'}</td>
+                            <td style="padding: 10px; border: 1px solid var(--border);">${c.cell_phone || '--'}</td>
+                            <td style="padding: 10px; border: 1px solid var(--border);">${c.city || '--'}</td>
+                            <td style="padding: 10px; border: 1px solid var(--border);">${c.email || '--'}</td>
+                        </tr>
+                    `).join("") || `<tr><td colspan="10" style="padding: 20px; text-align: center; color: var(--text-muted)">No new clients found.</td></tr>`;
+                }
+
+            } catch (err) {
+                console.error("Error loading clients:", err);
+            }
+        }
+
+        function renderClientList(clients) {
+            const list = document.getElementById("client_list");
+            list.innerHTML = "";
+            clients.forEach(c => {
+                const div = document.createElement("div");
+                div.className = "client-list-item";
+                div.innerHTML = `
+                    <div style="font-weight: 600;">${c.name}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted)">${c.phone || 'No phone'}</div>
+                `;
+                div.onclick = () => loadClient(c.id);
+                list.appendChild(div);
+            });
+        }
+
+        // 🔍 SEARCH
+        async function searchClient() {
+            const q = document.getElementById("search").value;
+            const data = await getData(`/clients/search?query=${q}`);
+            renderClientList(data);
+        }
+
+        async function advancedSearch() {
+            const field = document.getElementById("search-criterion").value;
+            const query = document.getElementById("advanced-search-input").value;
+            if(!query) return loadClients();
+
+            const data = await getData(`/clients/search?query=${query}&field=${field}`);
+            renderClientList(data);
+        }
+
+        // ➕ ADD CLIENT
+        async function addClient() {
+            const name = document.getElementById("name").value;
+            const phone = document.getElementById("phone").value;
+            const city = document.getElementById("city").value;
+            const email = document.getElementById("email").value;
+
+            if(!name) return alert("Name is required");
+
+            try {
+                const response = await postData("/clients", { name, phone, city, email });
+                
+                if (response.error) {
+                    alert("Error: " + response.error);
+                } else {
+                    // Reset form and hide
+                    document.getElementById("name").value = "";
+                    document.getElementById("phone").value = "";
+                    document.getElementById("city").value = "";
+                    document.getElementById("email").value = "";
+                    document.getElementById("reg-form-container").style.display = 'none';
+                    
+                    alert("Client created successfully!");
+                    loadClients();
+                }
+            } catch (err) {
+                console.error("Failed to create client:", err);
+                alert("Failed to connect to backend");
+            }
+        }
+
+        // 📊 LOAD FULL CLIENT DATA
+        async function loadClient(id) {
+            currentClientId = id;
+            
+            // Highlight active client item (optional visual polish)
+            document.querySelectorAll('.client-list-item').forEach(el => {
+                el.style.borderColor = 'transparent';
+                if(el.innerText.includes(event.currentTarget.innerText)) {
+                    // This is a bit hacky but for demo purposes
+                }
+            });
+
+            const data = await getData(`/clients/${id}/full`);
+            document.getElementById("client_name").innerText = data.client.name;
+
+            // Details
+            document.getElementById("details-content").innerHTML = `
+                <div style="margin-bottom: 15px">
+                    <label style="color: var(--text-muted); font-size: 0.8rem;">PHONE</label>
+                    <div style="font-size: 1.1rem;">${data.client.phone || '--'}</div>
+                </div>
+                <div style="margin-bottom: 15px">
+                    <label style="color: var(--text-muted); font-size: 0.8rem;">CITY</label>
+                    <div style="font-size: 1.1rem;">${data.client.city || '--'}</div>
+                </div>
+                <div>
+                    <label style="color: var(--text-muted); font-size: 0.8rem;">EMAIL</label>
+                    <div style="font-size: 1.1rem;">${data.client.email || '--'}</div>
+                </div>
+            `;
+
+            // Summary (Part 4)
+            const summary = await getData(`/clients/${id}/financial-summary`);
+            document.getElementById("financial-summary-content").innerHTML = `
+                <div class="stat-card" style="margin-bottom: 15px;">
+                    <div class="stat-label">Total Business</div>
+                    <div class="stat-value">₹${summary.total_business.toLocaleString()}</div>
+                </div>
+                <div class="stat-card" style="border-left-color: var(--accent); margin-bottom: 15px;">
+                    <div class="stat-label">Received Amount</div>
+                    <div class="stat-value">₹${summary.total_paid.toLocaleString()}</div>
+                </div>
+                <div class="stat-card" style="border-left-color: var(--danger);">
+                    <div class="stat-label">Pending Balance</div>
+                    <div class="stat-value">₹${summary.pending.toLocaleString()}</div>
+                </div>
+            `;
+
+            // Orders (Table format)
+            const ordersTable = document.getElementById("orders-table-body");
+            ordersTable.innerHTML = data.orders.length ? data.orders.map((o, index) => {
+                const inv = data.invoices.find(i => i.order_id === o.id) || {amount: 0};
+                return `
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid var(--border);">${index + 1}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border); font-weight: 500; color: var(--primary); font-size: 0.75rem;">${data.client.name.toUpperCase()}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border); font-weight: 600;">${inv.amount.toFixed(2)}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">1</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">
+                            <div style="display: flex; gap: 8px;">
+                                <span title="View Details" style="cursor: pointer; opacity: 0.7; color: var(--primary);">📑</span>
+                                <span title="Generate Bill" style="cursor: pointer; opacity: 0.7; color: var(--primary);">💵</span>
+                                <span title="Assign Staff" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👥</span>
+                                <span title="Client Profile" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👤</span>
+                            </div>
+                        </td>
+                        <td style="padding: 10px; border: 1px solid var(--border); color: var(--primary);">00${o.id}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">${data.client.office_phone || '--'}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">${data.client.cell_phone || '--'}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">${data.client.city || '--'}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">${data.client.email || '--'}</td>
+                    </tr>
+                `;
+            }).join("") : `<tr><td colspan="10" style="padding: 20px; text-align: center; color: var(--text-muted)">No orders found.</td></tr>`;
+
+            // Shipments (Table format)
+            const shipmentsTable = document.getElementById("shipments-table-body");
+            shipmentsTable.innerHTML = data.shipments.length ? data.shipments.map((s, index) => {
+                const inv = data.invoices.find(i => i.order_id === s.order_id) || {amount: 0};
+                return `
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid var(--border);">${index + 1}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border); font-weight: 500; color: var(--primary); font-size: 0.75rem;">${data.client.name.toUpperCase()}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border); font-weight: 600;">${inv.amount.toFixed(2)}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">1</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">
+                            <div style="display: flex; gap: 8px;">
+                                <span title="View Tracking" style="cursor: pointer; opacity: 0.7; color: var(--primary);">📑</span>
+                                <span title="View Invoice" style="cursor: pointer; opacity: 0.7; color: var(--primary);">💵</span>
+                                <span title="Carrier Info" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👥</span>
+                                <span title="Client Profile" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👤</span>
+                            </div>
+                        </td>
+                        <td style="padding: 10px; border: 1px solid var(--border); color: var(--primary);">00${s.id}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">${data.client.office_phone || '--'}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">${data.client.cell_phone || '--'}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">${data.client.city || '--'}</td>
+                        <td style="padding: 10px; border: 1px solid var(--border);">${data.client.email || '--'}</td>
+                    </tr>
+                `;
+            }).join("") : `<tr><td colspan="10" style="padding: 20px; text-align: center; color: var(--text-muted)">No shipments found.</td></tr>`;
+
+            // Bills (Table format)
+            const billsTable = document.getElementById("bills-table-body");
+            const bills = await getData(`/clients/${id}/invoices`);
+            billsTable.innerHTML = bills.length ? bills.map((b, index) => `
+                <tr>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${index + 1}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border); font-weight: 500; color: var(--primary); font-size: 0.75rem;">${data.client.name.toUpperCase()}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border); font-weight: 600;">${b.amount.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">1</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">
+                        <div style="display: flex; gap: 8px;">
+                            <span title="Download PDF" style="cursor: pointer; opacity: 0.7; color: var(--primary);">📑</span>
+                            <span title="Record Payment" style="cursor: pointer; opacity: 0.7; color: var(--primary);">💵</span>
+                            <span title="History" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👥</span>
+                            <span title="Client Profile" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👤</span>
+                        </div>
+                    </td>
+                    <td style="padding: 10px; border: 1px solid var(--border); color: var(--primary);">00${b.id}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.office_phone || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.cell_phone || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.city || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.email || '--'}</td>
+                </tr>
+            `).join("") : `<tr><td colspan="10" style="padding: 20px; text-align: center; color: var(--text-muted)">No invoices found.</td></tr>`;
+
+            // Collections (Table format)
+            const collectionsTable = document.getElementById("collections-table-body");
+            const payments = await getData(`/clients/${id}/payments`);
+            collectionsTable.innerHTML = payments.length ? payments.map((p, index) => `
+                <tr>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${index + 1}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border); font-weight: 500; color: var(--primary); font-size: 0.75rem;">${data.client.name.toUpperCase()}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border); font-weight: 600;">${p.amount.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">1</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">
+                        <div style="display: flex; gap: 8px;">
+                            <span title="Receipt PDF" style="cursor: pointer; opacity: 0.7; color: var(--primary);">📑</span>
+                            <span title="View Linked Invoice" style="cursor: pointer; opacity: 0.7; color: var(--primary);">💵</span>
+                            <span title="Staff Assign" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👥</span>
+                            <span title="Client Profile" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👤</span>
+                        </div>
+                    </td>
+                    <td style="padding: 10px; border: 1px solid var(--border); color: var(--primary);">00${p.payment_id || p.id}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.office_phone || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.cell_phone || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.city || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.email || '--'}</td>
+                </tr>
+            `).join("") : `<tr><td colspan="10" style="padding: 20px; text-align: center; color: var(--text-muted)">No payment records.</td></tr>`;
+
+            // Messages (Table format)
+            const messagesTable = document.getElementById("messages-table-body");
+            messagesTable.innerHTML = `
+                <tr>
+                    <td style="padding: 10px; border: 1px solid var(--border);">1</td>
+                    <td style="padding: 10px; border: 1px solid var(--border); font-weight: 500; color: var(--primary); font-size: 0.75rem;">${data.client.name.toUpperCase()}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border); font-weight: 600;">${data.messages.length}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">1</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">
+                        <div style="display: flex; gap: 8px;">
+                            <span title="WhatsApp Info" style="cursor: pointer; opacity: 0.7; color: var(--primary);">📑</span>
+                            <span title="SMS History" style="cursor: pointer; opacity: 0.7; color: var(--primary);">💵</span>
+                            <span title="Support Team" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👥</span>
+                            <span title="Client Profile" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👤</span>
+                        </div>
+                    </td>
+                    <td style="padding: 10px; border: 1px solid var(--border); color: var(--primary);">00${id}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.office_phone || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.cell_phone || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.city || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.email || '--'}</td>
+                </tr>
+            `;
+
+            // Message Chat List
+            document.getElementById("messages-list").innerHTML = data.messages.length ? data.messages.map(m => `
+                <div style="margin-bottom: 10px; text-align: ${m.direction === 'outbound' ? 'right' : 'left'}">
+                    <div style="display: inline-block; padding: 10px 15px; border-radius: 12px; background: ${m.direction === 'outbound' ? 'var(--primary)' : 'var(--bg-main)'}; color: ${m.direction === 'outbound' ? 'white' : 'var(--text-main)'};">
+                        ${m.content}
+                        <div style="font-size: 0.65rem; opacity: 0.7; margin-top: 5px;">${new Date(m.timestamp).toLocaleTimeString()}</div>
+                    </div>
+                </div>
+            `).join("") : `<p style="text-align: center; color: var(--text-muted)">No correspondence history.</p>`;
+
+            // Documents (Table format)
+            const documentsTable = document.getElementById("documents-table-body");
+            documentsTable.innerHTML = `
+                <tr>
+                    <td style="padding: 10px; border: 1px solid var(--border);">1</td>
+                    <td style="padding: 10px; border: 1px solid var(--border); font-weight: 500; color: var(--primary); font-size: 0.75rem;">${data.client.name.toUpperCase()}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border); font-weight: 600;">${data.documents.length}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">1</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">
+                        <div style="display: flex; gap: 8px;">
+                            <span title="File Explorer" style="cursor: pointer; opacity: 0.7; color: var(--primary);">📑</span>
+                            <span title="Invoices" style="cursor: pointer; opacity: 0.7; color: var(--primary);">💵</span>
+                            <span title="Shared Team" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👥</span>
+                            <span title="Client Profile" style="cursor: pointer; opacity: 0.7; color: var(--primary);">👤</span>
+                        </div>
+                    </td>
+                    <td style="padding: 10px; border: 1px solid var(--border); color: var(--primary);">00${id}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.office_phone || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.cell_phone || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.city || '--'}</td>
+                    <td style="padding: 10px; border: 1px solid var(--border);">${data.client.email || '--'}</td>
+                </tr>
+            `;
+
+            // Document depository list
+            document.getElementById("documents-list").innerHTML = data.documents.length ? data.documents.map(d => `
+                <div class="card" style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); padding: 10px 15px; margin-bottom: 10px;">
+                    <div>
+                        <span style="font-weight: 600; color: var(--primary);">📄 ${d.filename}</span>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">Uploaded: ${new Date(d.upload_date).toLocaleDateString()}</div>
+                    </div>
+                    <span style="cursor: pointer; background: var(--primary); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem;">Download</span>
+                </div>
+            `).join("") : `<p style="text-align: center; color: var(--text-muted)">No documents lodged.</p>`;
+
+            // Tasks (List view)
+            document.getElementById("tasks-list").innerHTML = data.tasks.length ? data.tasks.map(t => `
+                <div class="card" style="display: flex; justify-content: space-between; align-items: center; border-left: 4px solid ${t.status === 'done' ? 'var(--accent)' : 'var(--danger)'}; margin-bottom: 10px;">
+                    <div>
+                        <span style="font-weight: 600;">${t.title}</span>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">Priority: High | Assigned: ${new Date().toLocaleDateString()}</div>
+                    </div>
+                    <span class="status-badge ${t.status === 'done' ? 'badge-green' : 'badge-orange'}">${t.status.toUpperCase()}</span>
+                </div>
+            `).join("") : `<p style="text-align: center; color: var(--text-muted)">No pending tasks.</p>`;
+
+            // Analysis
+            const analytics = await getData(`/clients/${id}/analytics`);
+            document.getElementById("analysis-content").innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Volume</div>
+                        <div class="stat-value">${analytics.orders.total} Orders</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--accent);">
+                        <div class="stat-label">Completion Rate</div>
+                        <div class="stat-value">${analytics.orders.total > 0 ? ((analytics.orders.completed / analytics.orders.total) * 100).toFixed(1) : 0}%</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--primary);">
+                        <div class="stat-label">Lifetime Value</div>
+                        <div class="stat-value">₹${analytics.finance.total_business.toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--danger);">
+                        <div class="stat-label">Outstanding</div>
+                        <div class="stat-value">₹${analytics.finance.pending.toLocaleString()}</div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <h3>Production Efficiency</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">
+                        This client has <b>${analytics.shipments.tryin}</b> TryIn stages and <b>${analytics.shipments.final}</b> final deliveries recorded.
+                        Average turnaround time is typically mapped through production logs.
+                    </p>
+                </div>
+            `;
+        }
+
+        // 🔍 LOCAL FILTERS
+        function filterContent(type, query) {
+            const items = document.getElementById(`${type}-list`).querySelectorAll('.card');
+            items.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                item.style.display = text.includes(query.toLowerCase()) ? 'flex' : 'none';
+            });
+        }
+
+        // ➕ ACTIONS
+        async function sendMessage() {
+            const content = document.getElementById("msg-content").value;
+            if(!content || !currentClientId) return;
+            await postData(`/clients/${currentClientId}/messages`, { client_id: currentClientId, content });
+            document.getElementById("msg-content").value = "";
+            loadClient(currentClientId);
+        }
+
+        async function uploadDoc() {
+            const filename = document.getElementById("doc-name").value;
+            if(!filename || !currentClientId) return;
+            await postData(`/clients/${currentClientId}/documents`, { client_id: currentClientId, filename });
+            document.getElementById("doc-name").value = "";
+            loadClient(currentClientId);
+        }
+
+        async function assignTask() {
+            const title = document.getElementById("task-title").value;
+            if(!title || !currentClientId) return;
+            await postData(`/clients/${currentClientId}/tasks`, { client_id: currentClientId, title });
+            document.getElementById("task-title").value = "";
+            loadClient(currentClientId);
+        }
+
+        // 🔄 TAB SWITCH
+        function showTab(tabId) {
+            // Update Tab Content
+            document.querySelectorAll(".tab-content").forEach(t => t.style.display = "none");
+            document.getElementById(tabId).style.display = "block";
+
+            // Update Side Panel Nav ONLY
+            document.querySelector(".side-panel").querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+            document.getElementById("nav-" + tabId).classList.add("active");
+        }
+
+        // INIT
+        loadClients();
+        const role = localStorage.getItem("role");
+        if(document.getElementById("user-role")) {
+            document.getElementById("user-role").innerText = role ? role.toUpperCase() : "ADMIN";
+        }
+    </script>
+</body>
+</html>

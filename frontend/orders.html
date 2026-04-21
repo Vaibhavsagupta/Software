@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental ERP | Production & Orders</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/api.js"></script>
+    
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- TOP NAVBAR -->
+        <div class="navbar">
+            <h2 onclick="window.location.href='index.html'">Lab Command</h2>
+            <div class="navbar-content">
+                <div class="sidebar-nav">
+                    <div class="nav-item" onclick="window.location.href='index.html'"><span>🏠 Dashboard</span></div>
+                    <div class="nav-item" onclick="window.location.href='clients.html'"><span>👥 Clients</span></div>
+                    <div class="nav-item active" onclick="window.location.href='orders.html'"><span>📦 Orders</span></div>
+                    <div class="nav-item" onclick="window.location.href='pickups.html'"><span>🚚 Pickups</span></div>
+                    <div class="nav-item" onclick="window.location.href='shipments.html'"><span>🚚 Shipments</span></div>
+                    <div class="nav-item" onclick="window.location.href='accounts.html'"><span>💰 Accounts</span></div>
+                    <div class="nav-item" onclick="go('expenses.html')"><span>💸 Expenses</span></div>
+                </div>
+            </div>
+            <div class="navbar-actions">
+                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    Secured: <span id="user-role" style="color: var(--accent); font-weight: 600;">...</span>
+                </div>
+                <button class="btn-primary" style="background: var(--danger); width: auto; padding: 8px 16px; font-size: 0.8rem;" onclick="logout()">🚪 Exit</button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <!-- SIDE PANEL -->
+            <div class="side-panel">
+                <div class="sidebar-nav">
+                    <h4 style="margin-bottom: 10px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">🏭 Production Queue</h4>
+                    <div class="nav-item" id="nav-order-all" onclick="loadOrders()"><span>🛠️ Master Queue</span></div>
+                    <div class="nav-item" id="nav-order-New" onclick="filterOrder('New')"><span>🆕 New Cases</span></div>
+                    <div class="nav-item" id="nav-order-Production" onclick="filterOrder('In Production')"><span>⚡ In Production</span></div>
+                    <div class="nav-item" id="nav-order-TryIn" onclick="filterOrder('Out for TryIn')"><span>🔬 Out for TryIn</span></div>
+                    <div class="nav-item" id="nav-order-Complete" onclick="filterOrder('Complete')"><span>📦 Ready to Ship</span></div>
+                    <div class="nav-item" id="nav-order-Overdue" onclick="filterOrder('Overdue')"><span>🚨 Overdue Cases</span></div>
+
+                    <h4 style="margin: 20px 0 10px 0; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">📈 Monitoring</h4>
+                    <div class="nav-item" id="nav-calendar" onclick="loadCalendar()"><span>📅 Calendar</span></div>
+                    <div class="nav-item" id="nav-summary" onclick="loadSummary()"><span>📊 Status Summary</span></div>
+                </div>
+
+                <hr style="opacity: 0.1; margin: 20px 0;">
+
+                <div class="add-client-form">
+                    <h4 style="margin-bottom: 10px; color: var(--text-muted);">Quick Console</h4>
+                    <input id="client_id_input" type="number" placeholder="Client ID">
+                    <input id="note_input" type="text" placeholder="Notes">
+                    <button class="btn-primary" style="margin-bottom: 15px;" onclick="createPickup()">Request Pickup</button>
+                    
+                    <hr style="opacity: 0.1; margin-bottom: 15px;">
+                    
+                    <input id="order_id_input" type="number" placeholder="Order ID">
+                    <select id="status_select" style="width:100%; padding:10px; border-radius:10px; margin-bottom:10px; border:1px solid var(--border);">
+                        <option value="In Production">In Production</option>
+                        <option value="Out for TryIn">Out for TryIn</option>
+                        <option value="Complete">Complete (Final)</option>
+                        <option value="Delivered">Mark Delivered</option>
+                        <option value="On Hold">Put On Hold</option>
+                    </select>
+                    <button class="btn-primary" style="background: var(--accent);" onclick="updateStatus()">Update Status</button>
+                </div>
+            </div>
+
+            <!-- MAIN CONTENT -->
+            <div class="main-content">
+                <div class="header-section">
+                    <h1 class="client-title" id="view-title">Production Summary</h1>
+                    <div id="stat-dashboard"></div>
+                </div>
+
+                <div id="data-container">
+                    <div id="data-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 📊 DASHBOARD SUMMARY
+        async function loadSummary() {
+            setActiveNavItem("summary");
+            const data = await getData("/orders/summary");
+            const grid = document.getElementById("data-grid");
+            const titleEl = document.getElementById("view-title");
+            
+            titleEl.innerText = "Operations Dashboard";
+            grid.innerHTML = `
+                <div class="card" style="grid-column: 1/-1; display: grid; grid-template-columns: repeat(3, 2fr); gap: 20px;">
+                    <div class="stat-card" style="border-left-color: var(--primary);">
+                        <div class="stat-label">New Cases</div>
+                        <div class="stat-value">${data.new}</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--accent);">
+                        <div class="stat-label">In Production</div>
+                        <div class="stat-value">${data.production}</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--warning);">
+                        <div class="stat-label">Out for TryIn</div>
+                        <div class="stat-value">${data.tryin}</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--green);">
+                        <div class="stat-label">Complete</div>
+                        <div class="stat-value">${data.complete}</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--danger);">
+                        <div class="stat-label">Overdue</div>
+                        <div class="stat-value" style="color: var(--danger)">${data.overdue}</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: #64748b;">
+                        <div class="stat-label">On Hold</div>
+                        <div class="stat-value">${data.hold}</div>
+                    </div>
+                </div>
+            `;
+            updateTopStats(data);
+        }
+
+        function updateTopStats(data) {
+            const container = document.getElementById("stat-dashboard");
+            const total = data.new + data.production + data.tryin + data.hold + data.overdue;
+            container.innerHTML = `
+                <div class="stat-card" style="padding: 10px 20px; min-width: 180px;">
+                    <div class="stat-label">Active Workload</div>
+                    <div class="stat-value" style="font-size: 1.1rem;">${total} Active Cases</div>
+                </div>
+            `;
+        }
+
+        // 📦 PICKUPS RENDER
+        async function loadPickups() {
+            setActiveNavItem("pickup-all");
+            const data = await getData("/orders/pickup");
+            renderPickups(data, "All Pickup Requests");
+        }
+
+        async function filterPickup(status) {
+            setActiveNavItem("pickup-" + status);
+            const data = await getData(`/orders/pickup/status/${status}`);
+            renderPickups(data, `${status.charAt(0).toUpperCase() + status.slice(1)} Pickups`);
+        }
+
+        function renderPickups(data, title) {
+            const grid = document.getElementById("data-grid");
+            document.getElementById("view-title").innerText = title;
+            grid.innerHTML = "";
+
+            data.forEach(p => {
+                const card = document.createElement("div");
+                card.className = "card";
+                card.style.display = "flex";
+                card.style.flexDirection = "column";
+                card.style.justifyContent = "space-between";
+
+                let statusBadge = p.status === 'completed' ? 'badge-green' : (p.status === 'converted' ? 'badge-blue' : 'badge-orange');
+
+                card.innerHTML = `
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                            <span style="font-weight: 700;">Client ID: ${p.client_id}</span>
+                            <span class="status-badge ${statusBadge}">${p.status}</span>
+                        </div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">
+                            "${p.note || 'No special instructions'}"
+                        </div>
+                    </div>
+                    <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 10px;">
+                        <span style="font-size: 0.7rem; color: var(--text-muted)">Requested: ${new Date(p.created_at).toLocaleString()}</span>
+                    </div>
+                `;
+
+                if (p.status === "pending") {
+                    const btn = document.createElement("button");
+                    btn.className = "btn-primary";
+                    btn.style.marginTop = "15px";
+                    btn.innerText = "📍 Mark Arrived";
+                    btn.onclick = () => completePickup(p.id);
+                    card.appendChild(btn);
+                } else if (p.status === "completed") {
+                    const btn = document.createElement("button");
+                    btn.className = "btn-primary";
+                    btn.style.marginTop = "15px";
+                    btn.style.background = "var(--accent)";
+                    btn.innerText = "✨ Convert to Order";
+                    btn.onclick = () => convertPickup(p.id);
+                    card.appendChild(btn);
+                }
+
+                grid.appendChild(card);
+            });
+        }
+
+        // 🏭 ORDERS RENDER
+        async function loadOrders() {
+            setActiveNavItem("order-all");
+            const data = await getData("/orders");
+            renderOrders(data, "Production Master Queue");
+        }
+
+        async function filterOrder(status) {
+            setActiveNavItem("order-" + (status.replace(" ", "")));
+            const data = await getData(`/orders/status/${status}`);
+            renderOrders(data, `${status} Cases`);
+        }
+
+        function renderOrders(data, title) {
+            const grid = document.getElementById("data-grid");
+            document.getElementById("view-title").innerText = title;
+            grid.innerHTML = "";
+
+            data.forEach(o => {
+                const card = document.createElement("div");
+                card.className = "card";
+
+                let statusBadge = "badge-blue";
+                if(o.status === 'In Production') statusBadge = "badge-orange";
+                if(o.status === 'Out for TryIn') statusBadge = "badge-warning";
+                if(o.status === 'Complete') statusBadge = "badge-green";
+                if(o.status === 'Overdue') statusBadge = "badge-red";
+                if(o.status === 'On Hold') statusBadge = "badge-red";
+
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                        <span style="font-weight: 700; font-size: 1.1rem;">Order #${o.id}</span>
+                        <span class="status-badge ${statusBadge}">${o.status}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                        Client: ${o.client_id} | ${o.note || 'No note'}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 12px;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted)">Due: ${new Date(o.due_date).toLocaleDateString()}</span>
+                        <button class="btn-primary" style="padding: 4px 10px; font-size: 0.7rem;" onclick="quickSelectOrder(${o.id})">Select</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 📅 CALENDAR VIEW
+        async function loadCalendar() {
+            setActiveNavItem("calendar");
+            const data = await getData("/orders/calendar");
+            const grid = document.getElementById("data-grid");
+            document.getElementById("view-title").innerText = "Case Deadlines Calendar";
+            grid.innerHTML = "";
+
+            data.forEach(o => {
+                const card = document.createElement("div");
+                card.className = "card";
+                card.innerHTML = `
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div style="background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 8px; text-align: center; min-width: 60px;">
+                            <div style="font-size: 0.7rem; text-transform: uppercase;">${new Date(o.date).toLocaleString('default', { month: 'short' })}</div>
+                            <div style="font-size: 1.2rem; font-weight: 700;">${new Date(o.date).getDate()}</div>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700;">${o.title}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted)">Phase: ${o.status}</div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // ➕ ACTIONS
+        async function createPickup() {
+            const cid = document.getElementById("client_id_input").value;
+            const note = document.getElementById("note_input").value;
+            if(!cid) return alert("Client ID required");
+            await postData("/orders/pickup", { client_id: parseInt(cid), note });
+            loadPickups();
+        }
+
+        async function completePickup(id) {
+            await putData(`/orders/pickup/${id}/complete`);
+            loadPickups();
+        }
+
+        async function convertPickup(id) {
+            await postData(`/orders/pickup/${id}/convert`);
+            loadOrders();
+        }
+
+        async function updateStatus() {
+            const oid = document.getElementById("order_id_input").value;
+            const stat = document.getElementById("status_select").value;
+            if(!oid) return alert("Select an Order");
+            
+            const response = await fetch(`http://127.0.0.1:8000/orders/${oid}/status?status=${stat}`, { method: "PUT" });
+            const result = await response.json();
+            if(result.error) alert(result.error);
+            loadOrders();
+        }
+
+        // UI HELPERS
+        function quickSelectOrder(id) {
+            document.getElementById("order_id_input").value = id;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function setActiveNavItem(id) {
+            document.querySelector(".side-panel").querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+            const el = document.getElementById("nav-" + id);
+            if(el) el.classList.add("active");
+        }
+
+        // INIT
+        loadSummary();
+        const role = localStorage.getItem("role");
+        if(document.getElementById("user-role")) {
+            document.getElementById("user-role").innerText = role ? role.toUpperCase() : "ADMIN";
+        }
+    </script>
+</body>
+</html>
