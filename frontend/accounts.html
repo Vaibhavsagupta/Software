@@ -15,19 +15,20 @@
     <div class="app-container">
         <!-- TOP NAVBAR -->
         <div class="navbar">
-            <h2 onclick="go('index.html')">Lab Command</h2>
+            <h2 onclick="window.location.href='index.html'">Lab Command</h2>
             <div class="navbar-content">
-                <div class="nav-item" onclick="go('index.html')">🏠 Home</div>
-                <div class="nav-item" onclick="go('clients.html')">👥 Clients</div>
-                <div class="nav-item" onclick="go('orders.html')">📦 Orders</div>
-                <div class="nav-item" onclick="go('pickups.html')">🚚 Pickups</div>
-                <div class="nav-item" onclick="go('shipments.html')">🚚 Shipments</div>
-                <div class="nav-item active" onclick="go('accounts.html')">💰 Accounts</div>
-                <div class="nav-item" onclick="go('expenses.html')">💸 Expenses</div>
+                <div class="sidebar-nav">
+                    <div class="nav-item" onclick="window.location.href='index.html'"><span>🏠 Dashboard</span></div>
+                    <div class="nav-item" onclick="window.location.href='clients.html'"><span>👥 Clients</span></div>
+                    <div class="nav-item" onclick="window.location.href='orders.html'"><span>📦 Orders</span></div>
+                    <div class="nav-item" onclick="window.location.href='pickups.html'"><span>🚚 Pickups</span></div>
+                    <div class="nav-item" onclick="window.location.href='shipments.html'"><span>🚚 Shipments</span></div>
+                    <div class="nav-item active" onclick="window.location.href='accounts.html'"><span>💰 Accounts</span></div>
+                    <div class="nav-item" onclick="go('expenses.html')"><span>💸 Expenses</span></div>
+                </div>
             </div>
             <div class="navbar-actions">
-                <div style="font-size: 0.9rem; color: #64748b;">Secured: <span style="color: #10b981; font-weight: 600;">ADMIN</span></div>
-                <button class="exit-btn" onclick="logout()">🚪 Exit</button>
+                <button class="btn-primary" style="background: var(--danger); width: auto; padding: 8px 16px; font-size: 0.8rem;" onclick="logout()">🚪 Exit</button>
             </div>
         </div>
 
@@ -52,8 +53,8 @@
                     <div class="nav-item" id="nav-adj-journal" onclick="loadAdjustments('journal')"><span>📒 Journal Voucher</span></div>
 
                     <h4 style="margin: 20px 0 10px 0; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">⚙️ Manage</h4>
-                    <div class="nav-item" id="nav-price-lists" onclick="alert('Price Lists Module Coming Soon')"><span>🏷️ Price Lists</span></div>
-                    <div class="nav-item" id="nav-warranties" onclick="alert('Warranties Module Coming Soon')"><span>🛡️ Warranties</span></div>
+                    <div class="nav-item" id="nav-price-lists" onclick="loadManageView('price-lists')"><span>🏷️ Price Lists</span></div>
+                    <div class="nav-item" id="nav-warranties" onclick="loadManageView('warranties')"><span>🛡️ Warranties</span></div>
                     
                     <h4 style="margin: 20px 0 10px 0; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">📊 Reports</h4>
                     <div class="nav-item" id="nav-summary" onclick="loadSummary()"><span>📈 Balance Sheet</span></div>
@@ -129,6 +130,10 @@
             a.setAttribute("href", url);
             a.setAttribute("download", filename || "data.csv");
             a.click();
+            } catch (err) {
+                console.error("Export Error:", err);
+                if(typeof showToast === 'function') showToast("Export failed: " + err.message, "error");
+            }
         }
 
         async function handleFilter(viewType) {
@@ -149,18 +154,18 @@
                 if(viewType === 'adj-credit') loadAdjustments('credit');
                 if(viewType === 'adj-debit') loadAdjustments('debit');
                 if(viewType === 'adj-journal') loadAdjustments('journal');
-                if(viewType === 'warranties') renderWarrantiesView();
+                if(viewType === 'warranties') loadWarranties();
                 if(btn) btn.innerText = originalText;
             }, 500);
         }
 
         async function loadManageView(view) {
-            setActiveNavItem(`manage-${view}`);
             if(view === 'price-lists') {
-                renderPriceListsView();
+                loadPriceLists();
             } else if(view === 'warranties') {
-                renderWarrantiesView();
+                loadWarranties();
             } else {
+                setActiveNavItem(`manage-${view}`);
                 const container = document.getElementById("data-grid");
                 document.getElementById("view-title").innerText = `${view.charAt(0).toUpperCase() + view.slice(1)} Management`;
                 container.innerHTML = `<div class="card" style="text-align: center; color: var(--text-muted); padding: 50px;">
@@ -238,85 +243,138 @@
             const container = document.getElementById("data-grid");
             document.getElementById("view-title").innerText = "Warranties Management";
             
-            const clients = await getData("/clients");
-            const orders = await getData("/orders");
+            const clients = await getData("/clients") || [];
+            const filterStatus = document.getElementById("w-order-status")?.value || "Ignore";
+            const filterClient = document.getElementById("w-client-id")?.value || "";
+            const filterStart = document.getElementById("w-start-date")?.value || "";
+            const filterEnd = document.getElementById("w-end-date")?.value || "";
+            
+            let url = "/orders";
+            let params = [];
+            if(filterStatus !== "Ignore") params.push(`status=${filterStatus}`);
+            if(filterClient) params.push(`client_id=${filterClient}`);
+            if(filterStart) params.push(`start_date=${filterStart}`);
+            if(filterEnd) params.push(`end_date=${filterEnd}`);
+            if(params.length > 0) url += "?" + params.join("&");
+            
+            const orders = await getData(url) || [];
 
-            let html = `
-                <div class="card" style="margin-bottom: 20px;">
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px;">
-                        <div>
-                            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 5px;">Client</label>
-                            <select style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
-                                <option value="">Select a client</option>
-                                ${clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-                            </select>
+            container.innerHTML = `
+                <div class="card" style="background: #f8fafc; border: 1px solid var(--border); padding: 20px; margin-bottom: 25px; font-size: 0.9rem;">
+                    <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <label style="display: flex; gap: 5px; cursor: pointer;"><input type="radio" name="w-mode" checked> Search</label>
+                            <label style="display: flex; gap: 5px; cursor: pointer;"><input type="radio" name="w-mode"> Scan</label>
                         </div>
-                        <div>
-                            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 5px;">Invoice Status</label>
-                            <select style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
-                                <option>Invoiced</option>
-                                <option>All</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 5px;">Compare Date</label>
-                            <select style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
-                                <option>Invoice Date</option>
-                            </select>
+                        <div style="flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Order Status</label>
+                                <select id="w-order-status" onchange="renderWarrantiesView()" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1;">
+                                    <option value="Ignore">Ignore</option>
+                                    <option value="New">New</option>
+                                    <option value="In Production">In Production</option>
+                                    <option value="Complete">Complete</option>
+                                    <option value="Delivered">Delivered</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Shipment Note</label>
+                                <select style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1;">
+                                    <option>Ignore</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Invoice Status</label>
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <select style="flex: 1; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1;">
+                                        <option>Invoiced</option>
+                                        <option>All</option>
+                                    </select>
+                                    <button onclick="renderWarrantiesView()" style="background: none; border: 1px solid #cbd5e1; padding: 4px; border-radius: 4px; cursor: pointer;">🔄</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: flex-end;">
-                        <div>
-                            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 5px;">Date Range</label>
-                            <input type="date" value="2026-04-01" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+
+                    <div style="display: flex; gap: 20px; align-items: flex-end; margin-bottom: 15px;">
+                        <div style="flex: 1; display: flex; gap: 15px;">
+                            <div style="width: 150px;">
+                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Compare Date</label>
+                                <select style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1;">
+                                    <option>Invoice Date</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Date Range</label>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <select style="padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1; width: 150px;">
+                                        <option>Month To Date</option>
+                                    </select>
+                                    <input type="date" id="w-start-date" value="2026-04-01" onchange="renderWarrantiesView()" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                    <input type="date" id="w-end-date" value="2026-04-19" onchange="renderWarrantiesView()" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                </div>
+                            </div>
                         </div>
-                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                             <button class="btn-primary" style="padding: 10px; background: var(--accent);">🖨️ Print Warranty Cards</button>
-                             <button class="btn-primary" onclick="handleFilter('warranties')" style="padding: 10px; width: 150px;">🔍 Search</button>
+                    </div>
+
+                    <div style="display: flex; gap: 20px; align-items: center; background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Client</label>
+                            <select id="w-client-id" onchange="renderWarrantiesView()" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #cbd5e1; background: transparent;">
+                                <option value="">Select a client</option>
+                                ${clients.map(c => `<option value="${c.id}" ${filterClient == c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+                            </select>
                         </div>
+                        <a href="#" style="color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: 500;">Advanced Search</a>
+                    </div>
+
+                    <div style="display: flex; gap: 25px; margin-top: 20px; font-size: 0.85rem; color: var(--primary); font-weight: 500;">
+                        <span style="cursor: pointer; display: flex; gap: 5px; align-items: center;" onclick="window.print()">🖨️ Print Warranty Cards</span>
+                        <span style="cursor: pointer; display: flex; gap: 5px; align-items: center;" onclick="showToast('Emailing cards...')">📧 Email Warranty Cards</span>
+                        <span style="cursor: pointer; display: flex; gap: 5px; align-items: center;">📄 Fields</span>
                     </div>
                 </div>
 
-                <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px;">
+                <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px; border: 1px solid var(--border);">
                     <table class="erp-table">
                         <thead>
                             <tr>
-                                <th>Sr</th>
+                                <th style="width: 50px;">Sr</th>
                                 <th>Order #</th>
-                                <th>Patient</th>
+                                <th>Patient Name</th>
                                 <th>Products</th>
                                 <th>Invoice Date</th>
                                 <th>Warranty Expiry</th>
-                                <th style="text-align: right;">Status</th>
+                                <th style="text-align: right;">Warranty Status</th>
                             </tr>
                         </thead>
                         <tbody>
+                            ${orders.length === 0 ? `
+                                <tr><td colspan="7" style="text-align: center; padding: 60px; color: var(--text-muted);">
+                                    No Order records found for current search criterion.
+                                </td></tr>
+                            ` : orders.map((o, idx) => {
+                                const expiry = o.warranty_expiry || new Date(new Date(o.created_at).setFullYear(new Date(o.created_at).getFullYear() + 5));
+                                return `
+                                    <tr>
+                                        <td>${idx + 1}</td>
+                                        <td style="font-weight: 600; color: var(--primary);">#ORD-${o.id}</td>
+                                        <td>${o.patient_name || 'Anonymous'}</td>
+                                        <td style="font-size: 0.85rem; color: var(--text-muted);">${o.products || '-'}</td>
+                                        <td>${new Date(o.created_at).toLocaleDateString()}</td>
+                                        <td style="color: var(--accent); font-weight: 600;">${new Date(expiry).toLocaleDateString()}</td>
+                                        <td style="text-align: right;">
+                                            <span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--accent); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem;">Active Warranty</span>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
             `;
-
-            if (orders.length === 0) {
-                html += `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">No records found for current search criterion.</td></tr>`;
-            } else {
-                orders.forEach((o, idx) => {
-                    const expiry = o.warranty_expiry || new Date(new Date().setFullYear(new Date().getFullYear() + 5));
-                    html += `
-                        <tr>
-                            <td>${idx + 1}</td>
-                            <td style="font-weight: 600; color: var(--primary);">#ORD-${o.id}</td>
-                            <td>${o.patient_name || 'Anonymous'}</td>
-                            <td style="font-size: 0.85rem; color: var(--text-muted);">${o.products || '-'}</td>
-                            <td>${new Date(o.created_at).toLocaleDateString()}</td>
-                            <td style="color: var(--accent); font-weight: 600;">${new Date(expiry).toLocaleDateString()}</td>
-                            <td style="text-align: right;">
-                                <span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--accent);">Active Warranty</span>
-                            </td>
-                        </tr>
-                    `;
-                });
-            }
-
-            html += `</tbody></table></div>`;
-            container.innerHTML = html;
         }
+
 
         async function renderPriceListsView() {
             const container = document.getElementById("data-grid");
@@ -403,14 +461,7 @@
             if(price) price[field] = field === 'charge' ? parseFloat(value) : value;
         }
 
-        async function savePrices() {
-            if(currentPrices.length === 0) return;
-                alert(result.msg || "Prices saved!");
-            } catch (error) {
-                console.error("Save error:", error);
-                alert("Failed to save prices");
-            }
-        }
+
 
         // 📊 GLOBAL SUMMARY
         async function loadSummary() {
@@ -420,31 +471,41 @@
             const titleEl = document.getElementById("view-title");
             
             titleEl.innerText = "Laboratory Balance Sheet";
+            
+            if (!data) {
+                grid.innerHTML = `<div class="card" style="text-align: center; color: var(--danger); padding: 40px;">
+                    <h3 style="margin-bottom: 10px;">⚠️ Connection Error</h3>
+                    <p>Unable to fetch financial summary from the backend. Please check if the server is running.</p>
+                    <button onclick="loadSummary()" class="btn-primary" style="width: auto; margin-top: 20px; padding: 10px 25px;">Try Again</button>
+                </div>`;
+                return;
+            }
+
             grid.innerHTML = `
                 <div class="card" style="grid-column: 1/-1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
                     <div class="stat-card">
                         <div class="stat-label">Total Invoiced</div>
-                        <div class="stat-value">₹${data.total_business.toLocaleString()}</div>
+                        <div class="stat-value">₹${(data.total_business || 0).toLocaleString()}</div>
                     </div>
                     <div class="stat-card" style="border-left-color: var(--accent);">
                         <div class="stat-label">Total Collected</div>
-                        <div class="stat-value">₹${data.total_paid.toLocaleString()}</div>
+                        <div class="stat-value">₹${(data.total_paid || 0).toLocaleString()}</div>
                     </div>
                     <div class="stat-card" style="border-left-color: var(--warning);">
                         <div class="stat-label">Pending (Gross)</div>
-                        <div class="stat-value">₹${data.pending_before_adjustment.toLocaleString()}</div>
+                        <div class="stat-value">₹${(data.pending_before_adjustment || 0).toLocaleString()}</div>
                     </div>
                     <div class="stat-card" style="border-left-color: var(--danger);">
                         <div class="stat-label">Total Credits</div>
-                        <div class="stat-value">₹${data.credit.toLocaleString()}</div>
+                        <div class="stat-value">₹${(data.credit || 0).toLocaleString()}</div>
                     </div>
                     <div class="stat-card" style="border-left-color: var(--primary);">
                         <div class="stat-label">Total Debits</div>
-                        <div class="stat-value">₹${data.debit.toLocaleString()}</div>
+                        <div class="stat-value">₹${(data.debit || 0).toLocaleString()}</div>
                     </div>
                     <div class="stat-card" style="border-left-color: var(--accent); background: rgba(16, 185, 129, 0.05);">
                         <div class="stat-label">Actual Receivable</div>
-                        <div class="stat-value" style="color: var(--accent)">₹${data.final_pending.toLocaleString()}</div>
+                        <div class="stat-value" style="color: var(--accent)">₹${(data.final_pending || 0).toLocaleString()}</div>
                     </div>
                 </div>
             `;
@@ -454,10 +515,12 @@
 
         function updateTopSummary(data) {
             const container = document.getElementById("summary-dashboard");
+            if (!container) return;
+            const pending = data ? (data.final_pending || 0) : 0;
             container.innerHTML = `
                 <div class="stat-card" style="padding: 10px 20px; min-width: 180px;">
                     <div class="stat-label">Net Pending</div>
-                    <div class="stat-value" style="font-size: 1.1rem; color: var(--danger)">₹${data.final_pending.toLocaleString()}</div>
+                    <div class="stat-value" style="font-size: 1.1rem; color: var(--danger)">₹${pending.toLocaleString()}</div>
                 </div>
             `;
         }
@@ -1050,9 +1113,7 @@
                     </div>
                 </div>
 
-                <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px;">
-                        <div>
-                <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px;">
+                <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px; border: 1px solid var(--border);">
                     <table class="erp-table">
                         <thead>
                             <tr>
@@ -1643,6 +1704,11 @@
             }
         }
 
+        async function loadWarranties() {
+            setActiveNavItem("warranties");
+            await renderWarrantiesView();
+        }
+
         function renderPriceListsView(data, targetContainer) {
             let html = `
                 <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 30px;">
@@ -2188,6 +2254,29 @@
         function toggleFields() {
             showToast("Field customization active", "success");
             // Placeholder for real field toggling logic
+        }
+
+        function showToast(message, type = "success") {
+            const toastMsg = document.getElementById("toast-msg");
+            const container = document.getElementById("toast-container");
+            if (!toastMsg || !container) return;
+            
+            toastMsg.innerText = (type === "success" ? "✅ " : "❌ ") + message;
+            toastMsg.style.backgroundColor = type === "success" ? "#059669" : "#dc2626";
+            
+            container.style.bottom = "30px";
+            container.style.opacity = "1";
+            
+            setTimeout(() => {
+                container.style.bottom = "-100px";
+                container.style.opacity = "0";
+            }, 3000);
+        }
+
+        async function handleFilter(view) {
+            if(view === 'warranties') {
+                renderWarrantiesView();
+            }
         }
 
         // INIT
