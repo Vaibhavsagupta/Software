@@ -532,7 +532,7 @@
             if(!name) return alert("Name is required");
 
             try {
-                const response = await postData("/clients", { name, phone, city, email });
+                const response = await postData("/clients/", { name, phone, city, email });
                 
                 if (response.error) {
                     alert("Error: " + response.error);

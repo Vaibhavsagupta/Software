@@ -187,7 +187,7 @@
 
             if(!name) return alert("Client Name is required");
 
-            const res = await postData("/clients", { name, phone, city, email });
+            const res = await postData("/clients/", { name, phone, city, email });
             if(res.id) {
                 alert("Client Registered!");
                 toggleClientForm();
