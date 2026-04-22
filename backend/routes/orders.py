@@ -38,10 +38,35 @@ def create_final_shipment(order, db):
 # ➕ CREATE ORDER
 @router.post("/", dependencies=[Depends(staff_only)])
 def create_order(data: OrderCreate, db: Session = Depends(get_db)):
-    order = Order(client_id=data.client_id, due_date=data.due_date, status="New", note=data.note)
+    # Calculate due date if not provided (e.g., today + 7 days)
+    due = data.due_date if data.due_date else datetime.utcnow() + timedelta(days=7)
+    
+    order = Order(
+        client_id=data.client_id, 
+        due_date=due, 
+        status="New", 
+        note=data.note,
+        patient_name=data.patient_name,
+        products=data.products,
+        model_number=data.model_number,
+        order_amount=data.order_amount
+    )
     db.add(order)
     db.commit()
     db.refresh(order)
+    
+    # 🔥 AUTO GENERATE INVOICE
+    invoice = Invoice(
+        order_id=order.id,
+        client_id=order.client_id,
+        amount=order.order_amount or 0.0,
+        paid_amount=0.0,
+        status="awaiting",
+        due_date=due
+    )
+    db.add(invoice)
+    db.commit()
+    
     return order
 
 

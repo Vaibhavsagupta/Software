@@ -1,5 +1,5 @@
 const BASE_URL = (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") 
-    ? "http://127.0.0.1:7070" 
+    ? `http://${window.location.hostname}:7070` 
     : (window.location.origin.includes("vercel.app") ? "https://software-backend-render.onrender.com" : window.location.origin); 
     // ^ Replace the Render URL above with your actual Render backend URL if it differs.
 

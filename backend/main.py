@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 
-from routes import auth, clients, orders, pickups, shipments, accounts, dashboard, expenses
+from routes import auth, clients, orders, pickups, shipments, accounts, dashboard, expenses, products
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -18,6 +18,8 @@ origins = [
     "https://dental-chi-fawn.vercel.app",
     "http://localhost:4537",
     "http://localhost:3000",
+    "http://127.0.0.1:4537",
+    "http://127.0.0.1:3000",
 ]
 
 app.add_middleware(
@@ -41,6 +43,7 @@ app.include_router(shipments.router)
 app.include_router(accounts.router)
 app.include_router(dashboard.router)
 app.include_router(expenses.router)
+app.include_router(products.router)
 
 # Serve Static Files
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
