@@ -62,7 +62,7 @@ The frontend is built with vanilla technologies, so no installation is required!
 
 ## 🧪 Testing the APIs
 Once the backend is running, you can access the interactive Swagger documentation at:
-👉 **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
+👉 **[http://127.0.0.1:7070/docs](http://127.0.0.1:7070/docs)**
 
 ---
 
